@@ -5,6 +5,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+//
+// utils
+//
+
+static bool startwith(char *p, char *q) {
+	return strncmp(p, q, strlen(q)) == 0;
+}
+
+//
+//	tokens
+//
+
 typedef enum {
 	TK_PUNCT, // Punctuators
 	TK_NUM, // Numberic literals
@@ -33,6 +45,13 @@ static bool equal(Token *tok, char *op) {
 		&& op[tok -> len] == '\0';
 }
 
+static int read_punct(char *p) {
+	if (startwith(p, "==") || startwith(p, "!=")
+			|| startwith(p, "<=") || startwith(p, ">="))
+		return 2;
+	return ispunct(*p) ? 1 : 0;
+}
+
 static Token *skip(Token *tok, char *s) {
 	if (equal(tok, s) == false)
 		error("expected '%s'", s);
@@ -56,6 +75,8 @@ static Token *new_token(Tokenkind kind, char *start, char *end) {
 static Token *tokenize(char *p) {
 	Token head = {};
 	Token *cur = &head;
+	char *start;
+	int punct_len;
 
 	while (*p) {
 		if (isspace(*p)) {
@@ -65,15 +86,15 @@ static Token *tokenize(char *p) {
 
 		if (isdigit(*p)) {
 			cur = cur -> next = new_token(TK_NUM, p, p);
-			char *start = p;
+			start = p;
 			cur -> val = strtoul(p, &p, 10);
 			cur -> len = p - start;
 			continue;
 		}
-
-		if (ispunct(*p)) {
-			cur = cur -> next = new_token(TK_PUNCT, p, p + 1);
-			p++;
+		punct_len = read_punct(p);
+		if (punct_len > 0) {
+			cur = cur -> next = new_token(TK_PUNCT, p, p + punct_len);
+			p += punct_len;
 			continue;
 		}
 		error("invalid token");
@@ -83,15 +104,20 @@ static Token *tokenize(char *p) {
 	return head.next;
 }
 
-/*
- *	parser
- */
+//
+//	parser
+//
+
 typedef enum {
 	ND_ADD,
 	ND_SUB,
 	ND_MUL,
 	ND_DIV,
 	ND_NEG, // unary -
+	ND_EQ, // ==
+	ND_NE, // !=
+	ND_LT, // <
+	ND_LE, // <
 	ND_NUM,
 } Nodekind;
 
@@ -109,6 +135,9 @@ static Node *expr(Token **rest, Token *tok);
 static Node *mul(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
 static Node *unary(Token **rest, Token *tok);
+static Node *equality(Token **rest, Token *tok);
+static Node *relational(Token **rest, Token *tok);
+static Node *add(Token **rest, Token *tok);
 
 static Node *new_node(Nodekind kind) {
 	Node *node = calloc(1, sizeof(Node));
@@ -136,11 +165,64 @@ static Node *new_num(int val) {
 }
 
 
-// expr = mul ("+" mul | "-" mul)*
+// expr = equality
 static Node *expr(Token **rest, Token *tok) {
+	return equality(rest, tok);
+}
+
+// equality = relational ("==" relational | "!=" relational)
+static Node *equality(Token **rest, Token *tok) {
+	Node *node = relational(&tok, tok);
+
+	while (1) {
+		if (equal(tok, "==")) {
+			node = new_binary(ND_EQ, node
+					, relational(&tok, tok -> next));
+			continue;
+		}
+		if (equal(tok, "!=")) {
+			node = new_binary(ND_NE, node
+					, relational(&tok, tok -> next));
+			continue;
+		}
+
+		*rest = tok;
+		return node;
+	}
+}
+
+// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+static Node *relational(Token **rest, Token *tok) {
+	Node *node = add(&tok, tok);
+
+	while (1) {
+		if (equal(tok, "<")) {
+			node = new_binary(ND_LT, node, add(&tok, tok -> next));
+			continue;
+		}
+		if (equal(tok, "<=")) {
+			node = new_binary(ND_LE, node, add(&tok, tok -> next));
+			continue;
+		}
+		if (equal(tok, ">")) {
+			node = new_binary(ND_LT, add(&tok, tok -> next), node);
+			continue;
+		}
+		if (equal(tok, ">=")) {
+			node = new_binary(ND_LE, add(&tok, tok->next), node);
+			continue;
+		}
+
+		*rest = tok;
+		return node;
+	}
+}
+
+// add = mul ("+" mul | "-" mul)*
+static Node *add(Token **rest, Token *tok) {
 	Node *node = mul(&tok, tok);
 
-	while(1) {
+	while (1) {
 		if (equal(tok, "+")) {
 			node = new_binary(ND_ADD, node, mul(&tok, tok -> next));
 			continue;
@@ -152,6 +234,7 @@ static Node *expr(Token **rest, Token *tok) {
 		*rest = tok;
 		return node;
 	}
+
 }
 
 // mul = unary ("*" unary | "/" unary)*
@@ -172,6 +255,7 @@ static Node *mul(Token **rest, Token *tok) {
 		return node;
 	}
 }
+
 // unary = ("+" | "-") unary
 //		   | primary
 static Node *unary(Token **rest, Token *tok) {
@@ -211,6 +295,7 @@ static void pop_to(char *arg) {
 
 static void gen_expr(Node *node) {
 	switch (node -> kind) {
+		// if not call both hands
 		case ND_NUM:
 			printf("	mov $%d, %%rax\n", node -> val);
 			return;
@@ -239,9 +324,22 @@ static void gen_expr(Node *node) {
 			printf("	cqo\n");
 			printf("	idiv %%rdi\n");
 			return;
-		case ND_NEG:
-			gen_expr(node->lhs);
-			printf("	neg %%rax\n");
+		case ND_EQ:
+		case ND_NE:
+		case ND_LT:
+		case ND_LE:
+			printf("	cmp %%rdi, %%rax\n");
+
+			if (node -> kind == ND_EQ)
+				printf("	sete %%al\n");
+			else if (node -> kind == ND_NE)
+				printf("	setne %%al\n");
+			else if (node -> kind == ND_LT)
+				printf("	setl %%al\n");
+			else if (node -> kind == ND_LE)
+				printf("	setle %%al\n");
+
+			printf("	movzb %%al, %%rax\n");
 			return;
 	}
 	error("invalid expression");
