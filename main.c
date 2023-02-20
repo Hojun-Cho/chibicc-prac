@@ -71,7 +71,7 @@ static Token *tokenize(char *p) {
 			continue;
 		}
 
-		if (*p == '+' || *p == '-') {
+		if (ispunct(*p)) {
 			cur = cur -> next = new_token(TK_PUNCT, p, p + 1);
 			p++;
 			continue;
@@ -83,6 +83,150 @@ static Token *tokenize(char *p) {
 	return head.next;
 }
 
+/*
+ *	parser
+ */
+typedef enum {
+	ND_ADD,
+	ND_SUB,
+	ND_MUL,
+	ND_DIV,
+	ND_NUM,
+} Nodekind;
+
+typedef struct Node Node;
+struct Node {
+	Nodekind kind;
+	Node *lhs;
+	Node *rhs;
+
+	// ND_NUM
+	int val;
+};
+
+static Node *expr(Token **rest, Token *tok);
+static Node *mul(Token **rest, Token *tok);
+static Node *primary(Token **rest, Token *tok);
+
+static Node *new_node(Nodekind kind) {
+	Node *node = calloc(1, sizeof(Node));
+	node -> kind = kind;
+	return node;
+}
+
+static Node *new_binary(Nodekind kind, Node *lhs, Node *rhs) {
+	Node *node = new_node(kind);
+	node -> lhs = lhs;
+	node -> rhs = rhs;
+	return node;
+}
+
+static Node *new_num(int val) {
+	Node *node = new_node(ND_NUM);
+	node -> val = val;
+	return node;
+}
+
+// expr = mul ("+" mul | "-" mul)*
+static Node *expr(Token **rest, Token *tok) {
+	Node *node = mul(&tok, tok);
+
+	while(1) {
+		if (equal(tok, "+")) {
+			node = new_binary(ND_ADD, node, mul(&tok, tok -> next));
+			continue;
+		}
+
+		if (equal(tok, "-")) {
+			node = new_binary(ND_SUB, node, mul(&tok, tok -> next));
+			continue;
+		}
+
+		*rest = tok;
+		return node;
+	}
+}
+
+// mul = primary ("*" primary | "/" primary)*
+static Node *mul(Token **rest, Token *tok) {
+	Node *node = primary(&tok, tok);
+
+	while(1) {
+		if (equal(tok, "*")) {
+			node = new_binary(ND_MUL, node, primary(&tok, tok -> next));
+			continue;
+		}
+
+		if (equal(tok ,"/")) {
+			node = new_binary(ND_DIV, node ,primary(&tok, tok -> next));
+			continue;
+		}
+
+		// if nothing
+		*rest = tok;
+		return node;
+	}
+}
+
+// primary = "(" expr ")" | num
+static Node *primary(Token **rest, Token *tok) {
+	Node *node;
+
+	if (equal(tok, "(")) {
+		node = expr(&tok, tok -> next);
+		*rest = skip(tok, ")");
+		return node;
+	}
+
+	if (tok -> kind == TK_NUM) {
+		node = new_num(tok -> val);
+		*rest = tok -> next;
+		return node;
+	}
+
+	error("expected an expression");
+}
+
+// gen code
+
+static void push(void) {
+	printf("	push %%rax\n");
+}
+
+static void pop_to(char *arg) {
+	printf("	pop %s\n", arg);
+}
+
+static void gen_expr(Node *node) {
+	if (node -> kind == ND_NUM) {
+		printf("	mov $%d, %%rax\n", node -> val);
+		return;
+	}
+
+	gen_expr(node -> rhs);
+	push();
+	gen_expr(node -> lhs);
+	pop_to("%rdi");
+
+	switch (node -> kind) {
+		case ND_ADD:
+			printf("	add %%rdi, %%rax\n");
+			return;
+		case ND_SUB:
+			printf("	sub %%rdi, %%rax\n");
+			return;
+		case ND_MUL:
+			printf("	imul %%rdi, %%rax\n");
+			return;
+		case ND_DIV:
+			printf("	cqo\n");
+			printf("	idiv %%rdi\n");
+			return;
+	}
+	error("invalid expression");
+
+}
+
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		fprintf(stderr, "expected argc 2, actual %d\n", argc);
@@ -90,26 +234,13 @@ int main(int argc, char **argv) {
 	}
 
 	Token *tok = tokenize(argv[1]);
+	Node *node = expr(&tok, tok);
 
 	printf("	.global main\n");
 	printf("main:\n");
-	printf("	mov $%d, %%rax\n", get_number(tok));
-	tok = tok -> next;
 
-	while (tok -> kind != TK_EOF) {
-		if (equal(tok, "+")) {
-			printf("	add $%d, %%rax\n", get_number(tok -> next));
-			tok = tok -> next -> next;
-			continue;
-		}
-
-		if (equal(tok, "-")) {
-			printf("	sub $%d, %%rax\n", get_number(tok -> next));
-			tok = tok -> next -> next;
-			continue;
-		}
-
-		error("invalid tok");
-	}
+	gen_expr(node);
 	printf("	ret\n");
+
+	return 0;
 }
