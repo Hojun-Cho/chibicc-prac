@@ -1,3 +1,2 @@
 # chibicc-prac
-[https://github.com/rui314/chibicc](chibicc)
-
+[https://github.com/rui314/chibicc](chibicc~)
