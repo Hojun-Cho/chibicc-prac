@@ -35,6 +35,7 @@ static void gen_expr(Node *node) {
 			pop_to("%rdi");
 			printf("	mov %%rax, (%%rdi)\n");
 			return;
+
 	}
 
 	gen_expr(node -> rhs);
@@ -83,6 +84,11 @@ static void gen_stmt(Node *node) {
 			gen_stmt(n);
 		return;
 	}
+	if (node -> kind == ND_RETURN) {
+		gen_expr(node -> lhs);
+		printf("	jmp .L.return\n");
+		return;
+	}
 	if (node -> kind == ND_EXPR_STMT) {
 		gen_expr(node->lhs);
 		return;
@@ -111,6 +117,7 @@ void code_gen(Function *prog) {
 	
 	gen_stmt(prog->body);
 	
+	printf(".L.return:\n");
 	printf("	mov %%rbp, %%rsp\n");
 	printf("	pop %%rbp\n");
 	printf("	ret\n");

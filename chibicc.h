@@ -38,6 +38,7 @@ typedef enum {
 	ND_NUM, // Integer
 	ND_EXPR_STMT,
 	ND_BLOCK, // {}
+	ND_RETURN,
 } Nodekind;
 
 // AST node type

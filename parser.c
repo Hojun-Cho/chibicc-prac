@@ -63,7 +63,15 @@ static Node *new_num(int val) {
 
 // stmt = expr-stmt
 //		  | "{" compound_stmt
+//		  | "return" expr ";"
 static Node *stmt(Token **rest, Token *tok) {
+	Node *node;
+
+	if (equal(tok, "return")) {
+		node = new_unary(ND_RETURN, expr(&tok, tok -> next));
+		*rest = skip(tok, ";");
+		return node;
+	}
 	if (equal(tok, "{"))
 		return compound_stmt(rest, tok -> next);
 	return expr_stmt(rest, tok);
