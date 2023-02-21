@@ -18,7 +18,9 @@ bool equal(Token *tok, char *op) {
 }
 
 Token *skip(Token *tok, char *s) {
-  if (!equal(tok, s))
+  if (!equal(tok, s)) {
     fprintf(stderr, "expected '%s'", s);
+  	exit(1);
+  }
   return tok->next;
 }

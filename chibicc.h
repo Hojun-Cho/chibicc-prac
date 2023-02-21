@@ -11,6 +11,7 @@ typedef enum {
 	TK_IDENT,
 	TK_PUNCT, // Punctuators
 	TK_NUM, // Numberic literals
+	TK_KEYWORD,
 	TK_EOF,
 } Tokenkind;
 
@@ -39,6 +40,7 @@ typedef enum {
 	ND_EXPR_STMT,
 	ND_BLOCK, // {}
 	ND_RETURN,
+	ND_IF,
 } Nodekind;
 
 // AST node type
@@ -54,6 +56,12 @@ struct Node {
 	Node *rhs;	// Right-hand side
 	Obj *var;
 	int val;	// Used if kind == ND_NUM
+	
+	// "if stmt
+	Node *cond;
+	Node *then;
+	Node *_else;
+
 };
 
 struct Obj {

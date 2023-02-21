@@ -64,6 +64,7 @@ static Node *new_num(int val) {
 // stmt = expr-stmt
 //		  | "{" compound_stmt
 //		  | "return" expr ";"
+//		  | "if" "(" expr ")" stmt ("else" stmt) ?
 static Node *stmt(Token **rest, Token *tok) {
 	Node *node;
 
@@ -72,6 +73,18 @@ static Node *stmt(Token **rest, Token *tok) {
 		*rest = skip(tok, ";");
 		return node;
 	}
+	if (equal(tok, "if")) {
+		node = new_node(ND_IF);
+		tok = skip(tok -> next, "(");
+		node -> cond = expr(&tok, tok);
+		tok = skip(tok, ")");
+		node -> then = stmt(&tok, tok);
+		if (equal(tok, "else")) 
+			node -> _else = stmt(&tok, tok -> next);
+		*rest = tok;
+		return node;
+	}
+
 	if (equal(tok, "{"))
 		return compound_stmt(rest, tok -> next);
 	return expr_stmt(rest, tok);
