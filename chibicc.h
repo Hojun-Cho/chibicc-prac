@@ -21,25 +21,27 @@ struct Token{
 };
 
 typedef enum {
-  ND_ADD, // +
-  ND_SUB, // -
-  ND_MUL, // *
-  ND_DIV, // /
-  ND_NEG, // unary -
-  ND_EQ,  // ==
-  ND_NE,  // !=
-  ND_LT,  // <
-  ND_LE,  // <=
-  ND_NUM, // Integer
+	ND_ADD, // +
+	ND_SUB, // -
+	ND_MUL, // *
+	ND_DIV, // /
+	ND_NEG, // unary -
+	ND_EQ,  // ==
+	ND_NE,  // !=
+	ND_LT,  // <
+	ND_LE,  // <=
+	ND_NUM, // Integer
+	ND_EXPR_STMT,
 } Nodekind;
 
 // AST node type
 typedef struct Node Node;
 struct Node {
-  Nodekind kind; // Node kind
-  Node *lhs;     // Left-hand side
-  Node *rhs;     // Right-hand side
-  int val;       // Used if kind == ND_NUM
+	Nodekind kind; // Node kind
+	Node *next;
+	Node *lhs;     // Left-hand side
+	Node *rhs;     // Right-hand side
+	int val;       // Used if kind == ND_NUM
 };
 
 
@@ -50,5 +52,5 @@ bool equal(Token *tok, char *op);
 Token *skip(Token *tok, char *s);
 
 Token *tokenize(char *p);
-Node *expr(Token **rest, Token *tok);
-void gen_expr(Node *node);
+Node *parse(Token *tok);
+void code_gen(Node *node);

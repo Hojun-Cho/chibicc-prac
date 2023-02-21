@@ -8,7 +8,7 @@ static void pop_to(char *arg) {
 	printf("	pop %s\n", arg);
 }
 
-void gen_expr(Node *node) {
+static void gen_expr(Node *node) {
 	switch (node -> kind) {
 		// if not call both hands
 		case ND_NUM:
@@ -58,4 +58,22 @@ void gen_expr(Node *node) {
 			return;
 	}
 	error("invalid expression");
+}
+
+static void gen_stmt(Node *node) {
+	if (node -> kind == ND_EXPR_STMT) {
+		gen_expr(node->lhs);
+		return;
+	}
+	error("invalid stmt");
+}
+
+void code_gen(Node *node) {
+	printf("	.global main\n");
+	printf("main:\n");
+
+	for (Node *n = node; n; n = n->next) {
+		gen_stmt(n);
+	}
+	printf("ret\n");
 }
