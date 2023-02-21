@@ -43,4 +43,8 @@ assert 1 '1>=0;'
 assert 1 '1>=1;'
 assert 0 '1>=2;'
 
+assert 10 'x=10; x;'
+assert 8  'a=3; z=5; a+z;'
+assert 20 'foo=5; bar = 15; foo+bar;'
+assert 100 'foo=10; bar =10; foo*bar;'
 echo OK

@@ -1,5 +1,13 @@
 #include "chibicc.h"
 
+static bool is_ident1(char c) {
+	return isalpha(c) || c == '_';
+}
+
+static bool is_ident2(char c) {
+	return isalnum(c) || c == '_';
+}
+
 static int read_punct(char *p) {
 	if (startwith(p, "==") || startwith(p, "!=")
 			|| startwith(p, "<=") || startwith(p, ">="))
@@ -30,6 +38,14 @@ Token *tokenize(char *p) {
 	while (*p) {
 		if (isspace(*p)) {
 			p++;
+			continue;
+		}
+		
+		if (is_ident1(*p)) {
+			start = p;
+			while (is_ident2(*p)) 
+				p++;
+			cur = cur -> next = new_token(TK_IDENT, start, p);
 			continue;
 		}
 

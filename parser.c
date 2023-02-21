@@ -1,5 +1,7 @@
 #include "chibicc.h"
 
+Obj *locals;
+
 static Node *mul(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
 static Node *unary(Token **rest, Token *tok);
@@ -8,11 +10,35 @@ static Node *relational(Token **rest, Token *tok);
 static Node *add(Token **rest, Token *tok);
 static Node *expr_stmt(Token **reset, Token *tok);
 static Node *expr (Token **rest, Token *tok);
+static Node *assign(Token **rest, Token *tok);
 
 static Node *new_node(Nodekind kind) {
 	Node *node = calloc(1, sizeof(Node));
 	node -> kind = kind;
 	return node;
+}
+
+static Obj *find_var(Token *tok) {
+	for (Obj *var = locals; var; var = var -> next)
+		if (strlen(var -> name) == tok -> len
+				&& !strncmp(tok-> loc, var -> name, tok -> len))
+			return var;
+	return NULL;
+}
+
+static Node *new_var_node(Obj *var) {
+	Node *node = new_node(ND_VAR);
+	node -> var = var;
+	return node;
+}
+
+// local var
+static Obj *new_lvar(char *name) {
+	Obj *var = calloc(1, sizeof(Obj));
+	var -> name = name;
+	var -> next = locals;
+	locals = var;
+	return var;
 }
 
 static Node *new_binary(Nodekind kind, Node *lhs, Node *rhs) {
@@ -43,6 +69,22 @@ static Node *stmt(Token **rest, Token *tok) {
 static Node *expr_stmt(Token **rest, Token *tok) {
 	Node *node = new_unary(ND_EXPR_STMT, expr(&tok, tok));
 	*rest = skip(tok, ";");
+	return node;
+}
+
+// expr = assign
+static Node *expr(Token **rest, Token *tok) {
+	return assign(rest, tok);
+}
+
+// assign = equality ("=" assign);
+static Node *assign(Token **rest, Token *tok) {
+	Node *node = equality(&tok, tok);
+
+	if (equal(tok, "="))
+		// x = y = 2;
+		node = new_binary(ND_ASSIGN, node, assign(&tok, tok -> next));
+	*rest = tok;
 	return node;
 }
 
@@ -151,6 +193,13 @@ static Node *primary(Token **rest, Token *tok) {
 		*rest = skip(tok, ")");
 		return node;
 	}
+	if (tok -> kind == TK_IDENT) {
+		Obj *var = find_var(tok);
+		if (!var)
+			var = new_lvar(strndup(tok -> loc, tok -> len));
+		*rest = tok -> next;
+		return new_var_node(var);
+	}
 	if (tok -> kind == TK_NUM) {
 		node = new_num(tok -> val);
 		*rest = tok -> next;
@@ -159,16 +208,16 @@ static Node *primary(Token **rest, Token *tok) {
 	error("expected an expression");
 }
 
-// expr = equality
-static Node *expr(Token **rest, Token *tok) {
-	return equality(rest, tok);
-}
-
 // program = stmt*
-Node *parse(Token *tok) {
+Function *parse(Token *tok) {
 	Node head = {};
 	Node *cur = &head;
+	Function *prog = calloc(1, sizeof(Function));
+
 	while (tok -> kind != TK_EOF)
 		cur = cur -> next = stmt(&tok, tok);
-	return head.next;
+
+	prog -> body = head.next;
+	prog -> locals = locals;
+	return prog;
 }

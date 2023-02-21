@@ -7,8 +7,8 @@ int main(int argc, char **argv) {
 	}
 
 	Token *tok = tokenize(argv[1]);
-	Node *node = parse(tok);
-	code_gen(node);
+	Function *prog = parse(tok);
+	code_gen(prog);
 
 	return 0;
 }
