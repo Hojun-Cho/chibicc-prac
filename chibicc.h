@@ -37,6 +37,7 @@ typedef enum {
 	ND_ASSIGN,
 	ND_NUM, // Integer
 	ND_EXPR_STMT,
+	ND_BLOCK, // {}
 } Nodekind;
 
 // AST node type
@@ -45,12 +46,13 @@ typedef struct Node Node;
 typedef struct Function Function;
 
 struct Node {
-	Nodekind kind; // Node kind
-	Node *next;
-	Node *lhs;     // Left-hand side
-	Node *rhs;     // Right-hand side
+	Nodekind kind;	// Node kind
+	Node *body;	// {...}
+	Node*next;
+	Node *lhs;	// Left-hand side
+	Node *rhs;	// Right-hand side
 	Obj *var;
-	int val;       // Used if kind == ND_NUM
+	int val;	// Used if kind == ND_NUM
 };
 
 struct Obj {

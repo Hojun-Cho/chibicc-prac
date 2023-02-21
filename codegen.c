@@ -78,6 +78,11 @@ static void gen_expr(Node *node) {
 }
 
 static void gen_stmt(Node *node) {
+	if (node -> kind == ND_BLOCK) {
+		for (Node *n = node -> body; n; n = n->next)
+			gen_stmt(n);
+		return;
+	}
 	if (node -> kind == ND_EXPR_STMT) {
 		gen_expr(node->lhs);
 		return;
@@ -103,10 +108,8 @@ void code_gen(Function *prog) {
 	printf("	push %%rbp\n");
 	printf("	mov %%rsp, %%rbp\n");
 	printf("	sub $%d, %%rsp\n", prog->stack_size);
-
-	for (Node *n = prog -> body; n; n = n->next) {
-		gen_stmt(n);
-	}
+	
+	gen_stmt(prog->body);
 	
 	printf("	mov %%rbp, %%rsp\n");
 	printf("	pop %%rbp\n");

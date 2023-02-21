@@ -11,6 +11,7 @@ static Node *add(Token **rest, Token *tok);
 static Node *expr_stmt(Token **reset, Token *tok);
 static Node *expr (Token **rest, Token *tok);
 static Node *assign(Token **rest, Token *tok);
+static Node *compound_stmt(Token **rest, Token *tok);
 
 static Node *new_node(Nodekind kind) {
 	Node *node = calloc(1, sizeof(Node));
@@ -61,8 +62,25 @@ static Node *new_num(int val) {
 }
 
 // stmt = expr-stmt
+//		  | "{" compound_stmt
 static Node *stmt(Token **rest, Token *tok) {
+	if (equal(tok, "{"))
+		return compound_stmt(rest, tok -> next);
 	return expr_stmt(rest, tok);
+}
+
+// compound-stmt = stmt* "}"
+static Node *compound_stmt(Token **rest, Token *tok) {
+	Node head;
+	Node *cur = &head;
+
+	while (!equal(tok, "}"))
+		cur = cur -> next = stmt(&tok, tok);
+
+	Node *node = new_node(ND_BLOCK);
+	node -> body = head.next;
+	*rest = tok -> next;
+	return node;
 }
 
 // expr-stmt = expr ";"
@@ -210,14 +228,9 @@ static Node *primary(Token **rest, Token *tok) {
 
 // program = stmt*
 Function *parse(Token *tok) {
-	Node head = {};
-	Node *cur = &head;
+	tok = skip(tok, "{");
 	Function *prog = calloc(1, sizeof(Function));
-
-	while (tok -> kind != TK_EOF)
-		cur = cur -> next = stmt(&tok, tok);
-
-	prog -> body = head.next;
-	prog -> locals = locals;
+	prog -> body = compound_stmt(&tok, tok);
+	prog->locals = locals;
 	return prog;
 }
