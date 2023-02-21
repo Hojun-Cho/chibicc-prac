@@ -41,6 +41,8 @@ typedef enum {
 	ND_BLOCK, // {}
 	ND_RETURN,
 	ND_IF,
+	ND_ADDR, // &
+	ND_DEREF, //*
 } Nodekind;
 
 // AST node type
