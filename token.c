@@ -55,10 +55,10 @@ Token *tokenize(char *p) {
 			p++;
 			continue;
 		}
-		
+
 		if (is_ident1(*p)) {
 			start = p;
-			while (is_ident2(*p)) 
+			while (is_ident2(*p))
 				p++;
 			cur = cur -> next = new_token(TK_IDENT, start, p);
 			continue;

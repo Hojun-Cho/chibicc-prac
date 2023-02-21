@@ -12,6 +12,8 @@ static Node *expr_stmt(Token **reset, Token *tok);
 static Node *expr (Token **rest, Token *tok);
 static Node *assign(Token **rest, Token *tok);
 static Node *compound_stmt(Token **rest, Token *tok);
+static Node *stmt(Token **rest, Token *tok);
+static Node *mul(Token **rest, Token *tok);
 
 static Node *new_node(Nodekind kind) {
 	Node *node = calloc(1, sizeof(Node));
@@ -79,7 +81,7 @@ static Node *stmt(Token **rest, Token *tok) {
 		node -> cond = expr(&tok, tok);
 		tok = skip(tok, ")");
 		node -> then = stmt(&tok, tok);
-		if (equal(tok, "else")) 
+		if (equal(tok, "else"))
 			node -> _else = stmt(&tok, tok -> next);
 		*rest = tok;
 		return node;
@@ -95,8 +97,11 @@ static Node *compound_stmt(Token **rest, Token *tok) {
 	Node head;
 	Node *cur = &head;
 
-	while (!equal(tok, "}"))
+	// stmt type is result of stmt
+	while (!equal(tok, "}")) {
 		cur = cur -> next = stmt(&tok, tok);
+		add_type(cur);
+	}
 
 	Node *node = new_node(ND_BLOCK);
 	node -> body = head.next;
@@ -175,17 +180,58 @@ static Node *relational(Token **rest, Token *tok) {
 	}
 }
 
+// pointer + int
+static Node *new_add(Node *lhs, Node *rhs) {
+	add_type(lhs);
+	add_type(rhs);
+
+	if (is_integer(lhs -> ty) && is_integer(rhs -> ty))
+		return new_binary(ND_ADD, lhs, rhs);
+
+	if (lhs -> ty -> base && rhs -> ty -> base)
+		error("lhs and rhs both have base");
+
+	// ptr + num
+	rhs = new_binary(ND_MUL, rhs, new_num(8));
+	return new_binary(ND_ADD, lhs, rhs);
+}
+
+// pointer - int
+static Node *new_sub(Node *lhs, Node *rhs) {
+	add_type(lhs);
+	add_type(rhs);
+
+	if (is_integer(lhs -> ty) && is_integer(rhs -> ty))
+		return new_binary(ND_SUB, lhs, rhs);
+
+	// ptr - num
+	if (lhs -> ty -> base && is_integer(rhs -> ty)) {
+		rhs = new_binary(ND_MUL, rhs, new_num(8));
+		add_type(rhs);
+		Node *node = new_binary(ND_SUB, lhs , rhs);
+		node -> ty = lhs -> ty;
+		return node;
+	}
+	// ptr - ptr
+	if (lhs -> ty -> base && rhs -> ty -> base) {
+		Node *node = new_binary(ND_SUB, lhs, rhs);
+		node -> ty = ty_int;
+		return new_binary(ND_DIV, node, new_num(8));
+	}
+	error("invalid op in new_sub");
+}
+
 // add = mul ("+" mul | "-" mul)*
 static Node *add(Token **rest, Token *tok) {
 	Node *node = mul(&tok, tok);
 
 	while (1) {
 		if (equal(tok, "+")) {
-			node = new_binary(ND_ADD, node, mul(&tok, tok -> next));
+			node = new_add(node, mul(&tok, tok -> next));
 			continue;
 		}
 		if (equal(tok, "-")) {
-			node = new_binary(ND_SUB, node, mul(&tok, tok -> next));
+			node = new_sub(node, mul(&tok, tok -> next));
 			continue;
 		}
 		*rest = tok;
@@ -193,6 +239,7 @@ static Node *add(Token **rest, Token *tok) {
 	}
 
 }
+
 
 // mul = unary ("*" unary | "/" unary)*
 static Node *mul(Token **rest, Token *tok) {

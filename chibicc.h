@@ -49,10 +49,12 @@ typedef enum {
 typedef struct Obj Obj;
 typedef struct Node Node;
 typedef struct Function Function;
+typedef struct Type Type;
 
 struct Node {
 	Nodekind kind;	// Node kind
 	Node *body;	// {...}
+	Type *ty;
 	Node*next;
 	Node *lhs;	// Left-hand side
 	Node *rhs;	// Right-hand side
@@ -78,6 +80,20 @@ struct Function {
 	int stack_size;
 };
 
+typedef enum {
+	TY_INT,
+	TY_PTR,
+	TY_NOTHING,
+}Typekind;
+
+struct Type {
+	Typekind kind;
+	Type *base;
+};
+
+extern Type *ty_int;
+extern Type *ty_nothing;
+
 void error(char *fmt, ...);
 bool startwith(char *p, char *q);
 bool equal(Token *tok, char *op);
@@ -86,3 +102,5 @@ Token *skip(Token *tok, char *s);
 Token *tokenize(char *p);
 Function *parse(Token *tok);
 void code_gen(Function *prog);
+bool is_integer(Type *ty);
+void add_type(Node *node);
