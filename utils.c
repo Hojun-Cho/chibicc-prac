@@ -24,3 +24,12 @@ Token *skip(Token *tok, char *s) {
   }
   return tok->next;
 }
+
+bool consume_if_same(Token **rest, Token *tok, char *str) {
+	if (equal(tok, str)) {
+		*rest = tok -> next;
+		return true;
+	}
+	*rest = tok;
+	return false;
+}

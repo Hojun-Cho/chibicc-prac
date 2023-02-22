@@ -70,6 +70,7 @@ struct Node {
 
 struct Obj {
 	Obj *next;
+	Type *ty;
 	char *name;
 	int offset;
 };
@@ -83,24 +84,25 @@ struct Function {
 typedef enum {
 	TY_INT,
 	TY_PTR,
-	TY_NOTHING,
 }Typekind;
 
 struct Type {
 	Typekind kind;
 	Type *base;
+	Token *decl;
 };
 
 extern Type *ty_int;
-extern Type *ty_nothing;
 
 void error(char *fmt, ...);
 bool startwith(char *p, char *q);
 bool equal(Token *tok, char *op);
 Token *skip(Token *tok, char *s);
+bool consume_if_same(Token **rest, Token *tok, char *str);
 
 Token *tokenize(char *p);
 Function *parse(Token *tok);
 void code_gen(Function *prog);
 bool is_integer(Type *ty);
 void add_type(Node *node);
+Type *pointer_to(Type *base); 
