@@ -168,11 +168,12 @@ static Node *stmt(Token **rest, Token *tok) {
 	return expr_stmt(rest, tok);
 }
 
-// type-suffix = "[" num "]"
+// type-suffix = "[" num "]" type-suffix
 static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	if (equal(tok, "[")) {
 		int size = get_number(tok -> next);
-		*rest = skip(tok->next->next, "]");
+	 	tok = skip(tok->next->next, "]");
+		ty = type_suffix(rest, tok, ty);
 		return array_of(ty, size);
 	}
 	*rest = tok;

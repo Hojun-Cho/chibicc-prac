@@ -89,5 +89,5 @@ assert 3 '{ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *x; }'
 assert 4 '{ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+1); }'
 assert 5 '{ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+2); }'
 
-
+assert 0 '{int x[2][3]; int *y=x; *y = 0; return **x;}'
 echo OK
