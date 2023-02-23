@@ -84,12 +84,15 @@ struct Function {
 typedef enum {
 	TY_INT,
 	TY_PTR,
+	TY_ARRAY,
 }Typekind;
 
 struct Type {
 	Typekind kind;
+	int size;
 	Type *base;
 	Token *decl;
+	int array_len;
 };
 
 extern Type *ty_int;
@@ -106,3 +109,4 @@ void code_gen(Function *prog);
 bool is_integer(Type *ty);
 void add_type(Node *node);
 Type *pointer_to(Type *base); 
+Type *array_of(Type *bse, int size);

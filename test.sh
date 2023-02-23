@@ -79,4 +79,15 @@ assert 10 '{int x=1;int y=3;int z= 5;  *(&z -2) = 10; return x;}'
 assert 2 '{int x=2;{int x=3;} return x;}'
 assert 3 '{int x=2;{int x=3; return x;} return x;}'
 assert 2 '{int x=2; { int x=3; } { int y=4; return x; }}'
+
+assert 3 '{int x[2]; int *y=&x; *y=3; return *x;}'
+assert 3 '{int x[3]; int *y = x; *y = 3; return *x;}'
+
+assert 3 '{ int x[2]; int *y=&x; *y=3; return *x; }'
+
+assert 3 '{ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *x; }'
+assert 4 '{ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+1); }'
+assert 5 '{ int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+2); }'
+
+
 echo OK

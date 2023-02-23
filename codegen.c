@@ -16,6 +16,17 @@ static void pop_to(char *arg) {
 	printf("	pop %s\n", arg);
 }
 
+static void load(Type *ty) {
+	if (ty -> kind == TY_ARRAY)
+		return;
+	printf("	mov (%%rax), %%rax\n");
+}
+
+static void store(void) {
+	pop_to("%rdi");
+	printf("	mov %%rax, (%%rdi)\n");
+}
+
 static void gen_addr(Node *node) {
 	if (node -> kind == ND_VAR)
 		printf("	lea %d(%%rbp), %%rax\n", node -> var -> offset);
@@ -35,21 +46,20 @@ static void gen_expr(Node *node) {
 			return;
 		case ND_VAR:
 			gen_addr(node);
-			printf("	mov (%%rax), %%rax\n");
+			load(node->ty);
 			return;
 		case ND_ADDR:
 			gen_addr(node -> lhs);
 			return;
 		case ND_DEREF:
 			gen_expr(node -> lhs);
-			printf("	mov (%%rax), %%rax\n");
+			load(node->ty);
 			return;
 		case ND_ASSIGN:
 			gen_addr(node -> lhs);
 			push(); // push rax
 			gen_expr(node -> rhs);
-			pop_to("%rdi");
-			printf("	mov %%rax, (%%rdi)\n");
+			store();
 			return;
 	}
 
@@ -129,7 +139,7 @@ static void gen_stmt(Node *node) {
 static void assign_lvar_offset(Function *prog) {
 	int offset = 0;
 	for (Obj *var = prog -> locals; var; var = var -> next) {
-		offset += 8;
+		offset += var -> ty -> size;
 		var -> offset -= offset;
 	}
 	prog -> stack_size = offset;

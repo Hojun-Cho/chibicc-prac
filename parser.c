@@ -13,7 +13,7 @@ struct Scope {
 };
 
 static Scope *scope = &(Scope){};
-Obj *locals;
+static Obj *locals;
 
 static void enter_scope(void) {
 	Scope *sc = calloc(1, sizeof(Scope));
@@ -41,6 +41,37 @@ static Obj *find_var(Token *tok) {
 	return NULL;
 }
 
+static Obj *new_var(char *name, Type *ty) {
+	Obj *var = calloc(1, sizeof(Obj));
+	var -> name = name;
+	var -> ty = ty;
+	push_var_to_scope(var);	// push to current scope;
+	return var;
+}
+
+// add to locals
+static Obj *new_lvar(char *name, Type *ty) {
+	Obj *var = new_var(name, ty);
+	var -> next = locals;
+	locals = var;
+	return var;
+}
+
+static char *get_ident(Token *tok) {
+	if (tok -> kind != TK_IDENT)
+		error("get_ident: expected identifier");
+	return strndup(tok -> loc, tok -> len);
+}
+
+static int get_number(Token *tok) {
+  if (tok->kind != TK_NUM)
+    error("expected a number: get_number");
+  return tok->val;
+}
+
+
+static Node *declaration(Token **rest, Token *tok);
+
 static Node *mul(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
 static Node *unary(Token **rest, Token *tok);
@@ -67,16 +98,6 @@ static Node *new_var_node(Obj *var) {
 	return node;
 }
 
-// local var
-static Obj *new_lvar(char *name, Type *ty) {
-	Obj *var = calloc(1, sizeof(Obj));
-	var -> name = name;
-	var -> next = locals;
-	var -> ty = ty;
-	locals = var;
-	return var;
-}
-
 static Node *new_binary(Nodekind kind, Node *lhs, Node *rhs) {
 	Node *node = new_node(kind);
 	node -> lhs = lhs;
@@ -93,6 +114,28 @@ static Node *new_unary(Nodekind kind, Node *expr) {
 static Node *new_num(int val) {
 	Node *node = new_node(ND_NUM);
 	node -> val = val;
+	return node;
+}
+
+// compound-stmt = (declaration | stmt)* "}"
+static Node *compound_stmt(Token **rest, Token *tok) {
+	Node head;
+	Node *cur = &head;
+	
+	enter_scope();
+	// stmt type is result of stmt
+	while (!equal(tok, "}")) {
+		if (equal(tok, "int")) 
+			cur = cur -> next = declaration(&tok, tok);
+		else 
+			cur = cur -> next = stmt(&tok, tok);
+		add_type(cur);
+	}
+
+	Node *node = new_node(ND_BLOCK);
+	node -> body = head.next;
+	*rest = tok -> next;
+	leave_scope();
 	return node;
 }
 
@@ -125,10 +168,15 @@ static Node *stmt(Token **rest, Token *tok) {
 	return expr_stmt(rest, tok);
 }
 
-static char *get_ident(Token *tok) {
-	if (tok -> kind != TK_IDENT)
-		error("get_ident: expected identifier");
-	return strndup(tok -> loc, tok -> len);
+// type-suffix = "[" num "]"
+static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
+	if (equal(tok, "[")) {
+		int size = get_number(tok -> next);
+		*rest = skip(tok->next->next, "]");
+		return array_of(ty, size);
+	}
+	*rest = tok;
+	return ty;
 }
 
 // declspec = "int"
@@ -137,7 +185,7 @@ static Type *declspec(Token **rest, Token *tok) {
 	return ty_int;
 }
 
-// declarator = "*"* ident
+// declarator = "*"* ident type-suffix
 static Type *declarator(Token **rest, Token *tok, Type *ty) {
 	while (consume_if_same(&tok, tok, "*") == true) // eg. int ****x
 		ty = pointer_to(ty);
@@ -145,8 +193,8 @@ static Type *declarator(Token **rest, Token *tok, Type *ty) {
 	if (tok -> kind != TK_IDENT)
 		error("declarator: expected ident");
 	
+	ty = type_suffix(rest, tok -> next, ty);
 	ty -> decl = tok;
-	*rest = tok -> next;
 	return ty;
 }
 
@@ -163,7 +211,7 @@ static Node *declaration(Token **rest, Token *tok) {
 			tok = skip(tok, ",");
 		Type *ty = declarator(&tok, tok, basety);
 		Obj *var = new_lvar(get_ident(ty -> decl), ty);
-
+		
 		if (!equal(tok, "="))
 			continue;
 		// int x=1, y=2, z= 3;	
@@ -176,28 +224,6 @@ static Node *declaration(Token **rest, Token *tok) {
 	Node *node = new_node(ND_BLOCK);
 	node -> body = head.next;
 	*rest = tok -> next;
-	return node;
-}
-
-// compound-stmt = (declaration | stmt)* "}"
-static Node *compound_stmt(Token **rest, Token *tok) {
-	Node head;
-	Node *cur = &head;
-	
-	enter_scope();
-	// stmt type is result of stmt
-	while (!equal(tok, "}")) {
-		if (equal(tok, "int")) 
-			cur = cur -> next = declaration(&tok, tok);
-		else 
-			cur = cur -> next = stmt(&tok, tok);
-		add_type(cur);
-	}
-
-	Node *node = new_node(ND_BLOCK);
-	node -> body = head.next;
-	*rest = tok -> next;
-	leave_scope();
 	return node;
 }
 
@@ -285,7 +311,7 @@ static Node *new_add(Node *lhs, Node *rhs) {
 		error("lhs and rhs both have base");
 
 	// ptr + num
-	rhs = new_binary(ND_MUL, rhs, new_num(8));
+	rhs = new_binary(ND_MUL, rhs, new_num(lhs->ty->base->size));
 	return new_binary(ND_ADD, lhs, rhs);
 }
 
@@ -299,7 +325,7 @@ static Node *new_sub(Node *lhs, Node *rhs) {
 
 	// ptr - num
 	if (lhs -> ty -> base && is_integer(rhs -> ty)) {
-		rhs = new_binary(ND_MUL, rhs, new_num(8));
+		rhs = new_binary(ND_MUL, rhs, new_num(lhs->ty->base->size));
 		add_type(rhs);
 		Node *node = new_binary(ND_SUB, lhs , rhs);
 		node -> ty = lhs -> ty;
@@ -309,7 +335,7 @@ static Node *new_sub(Node *lhs, Node *rhs) {
 	if (lhs -> ty -> base && rhs -> ty -> base) {
 		Node *node = new_binary(ND_SUB, lhs, rhs);
 		node -> ty = ty_int;
-		return new_binary(ND_DIV, node, new_num(8));
+		return new_binary(ND_DIV, node, new_num(lhs->ty->base->size));
 	}
 	error("invalid op in new_sub");
 }
@@ -393,6 +419,7 @@ static Node *primary(Token **rest, Token *tok) {
 
 // program = stmt*
 Function *parse(Token *tok) {
+	locals = NULL;
 	enter_scope();
 	tok = skip(tok, "{");
 	Function *prog = calloc(1, sizeof(Function));
