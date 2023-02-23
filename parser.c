@@ -64,9 +64,9 @@ static char *get_ident(Token *tok) {
 }
 
 static int get_number(Token *tok) {
-  if (tok->kind != TK_NUM)
-    error("expected a number: get_number");
-  return tok->val;
+	if (tok->kind != TK_NUM)
+		error("expected a number: get_number");
+	return tok->val;
 }
 
 
@@ -84,6 +84,7 @@ static Node *assign(Token **rest, Token *tok);
 static Node *compound_stmt(Token **rest, Token *tok);
 static Node *stmt(Token **rest, Token *tok);
 static Node *mul(Token **rest, Token *tok);
+static Node *postfix(Token **rest, Token *tok);
 
 static Node *new_node(Nodekind kind) {
 	Node *node = calloc(1, sizeof(Node));
@@ -121,13 +122,13 @@ static Node *new_num(int val) {
 static Node *compound_stmt(Token **rest, Token *tok) {
 	Node head;
 	Node *cur = &head;
-	
+
 	enter_scope();
 	// stmt type is result of stmt
 	while (!equal(tok, "}")) {
-		if (equal(tok, "int")) 
+		if (equal(tok, "int"))
 			cur = cur -> next = declaration(&tok, tok);
-		else 
+		else
 			cur = cur -> next = stmt(&tok, tok);
 		add_type(cur);
 	}
@@ -172,7 +173,7 @@ static Node *stmt(Token **rest, Token *tok) {
 static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	if (equal(tok, "[")) {
 		int size = get_number(tok -> next);
-	 	tok = skip(tok->next->next, "]");
+		tok = skip(tok->next->next, "]");
 		ty = type_suffix(rest, tok, ty);
 		return array_of(ty, size);
 	}
@@ -193,7 +194,7 @@ static Type *declarator(Token **rest, Token *tok, Type *ty) {
 
 	if (tok -> kind != TK_IDENT)
 		error("declarator: expected ident");
-	
+
 	ty = type_suffix(rest, tok -> next, ty);
 	ty -> decl = tok;
 	return ty;
@@ -212,10 +213,10 @@ static Node *declaration(Token **rest, Token *tok) {
 			tok = skip(tok, ",");
 		Type *ty = declarator(&tok, tok, basety);
 		Obj *var = new_lvar(get_ident(ty -> decl), ty);
-		
+
 		if (!equal(tok, "="))
 			continue;
-		// int x=1, y=2, z= 3;	
+		// int x=1, y=2, z= 3;
 		Node *lhs = new_var_node(var);
 		Node *rhs = assign(&tok, tok -> next);
 		Node *node = new_binary(ND_ASSIGN, lhs, rhs);
@@ -381,7 +382,7 @@ static Node *mul(Token **rest, Token *tok) {
 }
 
 // unary = ("+" | "-" | "*" | "&" ) unary
-//		   | primary
+//		   | postfix
 static Node *unary(Token **rest, Token *tok) {
 	if (equal(tok, "+"))
 		return unary(rest, tok -> next);
@@ -391,7 +392,20 @@ static Node *unary(Token **rest, Token *tok) {
 		return new_unary(ND_ADDR, unary(rest, tok -> next));
 	if (equal(tok, "*"))
 		return new_unary(ND_DEREF, unary(rest, tok -> next));
-	return primary(rest, tok);
+	return postfix(rest, tok);
+}
+
+// postfix = primary ("[" expr "]")*
+static Node *postfix(Token **rest, Token *tok) {
+	Node *node = primary(&tok, tok);
+
+	while (equal(tok, "[")) {
+		Node *idx = expr(&tok, tok -> next);
+		tok = skip(tok, "]");
+		node = new_unary(ND_DEREF, new_add(node, idx));
+	}
+	*rest = tok;
+	return node;
 }
 
 // primary = "(" expr ")" | num
@@ -405,8 +419,8 @@ static Node *primary(Token **rest, Token *tok) {
 	}
 	if (tok -> kind == TK_IDENT) {
 		Obj *var = find_var(tok);
-		if (var == NULL)  
-			error("undefined variable");	
+		if (var == NULL)
+			error("undefined variable");
 		*rest = tok -> next;
 		return new_var_node(var);
 	}
