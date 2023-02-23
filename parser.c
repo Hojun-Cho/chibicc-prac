@@ -1,6 +1,45 @@
 #include "chibicc.h"
 
+typedef struct VarScope VarScope;
+struct VarScope {
+	VarScope *next;
+	Obj *var;
+};
+
+typedef struct Scope Scope;
+struct Scope {
+	Scope *next;
+	VarScope *vars;
+};
+
+static Scope *scope = &(Scope){};
 Obj *locals;
+
+static void enter_scope(void) {
+	Scope *sc = calloc(1, sizeof(Scope));
+	sc->next = scope;
+	scope = sc;
+}
+
+static VarScope *push_var_to_scope(Obj *var) {
+	VarScope *sc = calloc(1, sizeof(VarScope));
+	sc -> var = var;
+	sc -> next = scope -> vars;
+	scope -> vars = sc;
+	return sc;
+}
+
+static void leave_scope(void) {
+	scope = scope->next;
+}
+
+static Obj *find_var(Token *tok) {
+	for (Scope *sc = scope; sc; sc = sc -> next)
+		for (VarScope *v_sc = sc -> vars; v_sc; v_sc = v_sc -> next)
+			if (equal(tok, v_sc -> var -> name))
+				return v_sc->var;
+	return NULL;
+}
 
 static Node *mul(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
@@ -21,17 +60,10 @@ static Node *new_node(Nodekind kind) {
 	return node;
 }
 
-static Obj *find_var(Token *tok) {
-	for (Obj *var = locals; var; var = var -> next)
-		if (strlen(var -> name) == tok -> len
-				&& !strncmp(tok-> loc, var -> name, tok -> len))
-			return var;
-	return NULL;
-}
-
 static Node *new_var_node(Obj *var) {
 	Node *node = new_node(ND_VAR);
 	node -> var = var;
+	push_var_to_scope(var);
 	return node;
 }
 
@@ -151,7 +183,8 @@ static Node *declaration(Token **rest, Token *tok) {
 static Node *compound_stmt(Token **rest, Token *tok) {
 	Node head;
 	Node *cur = &head;
-
+	
+	enter_scope();
 	// stmt type is result of stmt
 	while (!equal(tok, "}")) {
 		if (equal(tok, "int")) 
@@ -164,6 +197,7 @@ static Node *compound_stmt(Token **rest, Token *tok) {
 	Node *node = new_node(ND_BLOCK);
 	node -> body = head.next;
 	*rest = tok -> next;
+	leave_scope();
 	return node;
 }
 
@@ -359,9 +393,11 @@ static Node *primary(Token **rest, Token *tok) {
 
 // program = stmt*
 Function *parse(Token *tok) {
+	enter_scope();
 	tok = skip(tok, "{");
 	Function *prog = calloc(1, sizeof(Function));
 	prog -> body = compound_stmt(&tok, tok);
 	prog->locals = locals;
+	leave_scope();
 	return prog;
 }
