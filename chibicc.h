@@ -102,6 +102,17 @@ bool startwith(char *p, char *q);
 bool equal(Token *tok, char *op);
 Token *skip(Token *tok, char *s);
 bool consume_if_same(Token **rest, Token *tok, char *str);
+char *get_ident(Token *tok);
+int get_number(Token *tok);
+
+// 
+// scope
+//
+Obj *find_var(Token *tok);
+void enter_scope(void);
+void leave_scope(void);
+Obj *new_var(char *name, Type *ty);
+Obj *new_lvar(char *name, Type *ty, Obj **locals);
 
 Token *tokenize(char *p);
 Function *parse(Token *tok);

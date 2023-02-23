@@ -1,77 +1,8 @@
 #include "chibicc.h"
 
-typedef struct VarScope VarScope;
-struct VarScope {
-	VarScope *next;
-	Obj *var;
-};
-
-typedef struct Scope Scope;
-struct Scope {
-	Scope *next;
-	VarScope *vars;
-};
-
-static Scope *scope = &(Scope){};
 static Obj *locals;
 
-static void enter_scope(void) {
-	Scope *sc = calloc(1, sizeof(Scope));
-	sc->next = scope;
-	scope = sc;
-}
-
-static VarScope *push_var_to_scope(Obj *var) {
-	VarScope *sc = calloc(1, sizeof(VarScope));
-	sc -> var = var;
-	sc -> next = scope -> vars;
-	scope -> vars = sc;
-	return sc;
-}
-
-static void leave_scope(void) {
-	scope = scope->next;
-}
-
-static Obj *find_var(Token *tok) {
-	for (Scope *sc = scope; sc; sc = sc -> next)
-		for (VarScope *v_sc = sc -> vars; v_sc; v_sc = v_sc -> next)
-			if (equal(tok, v_sc -> var -> name))
-				return v_sc->var;
-	return NULL;
-}
-
-static Obj *new_var(char *name, Type *ty) {
-	Obj *var = calloc(1, sizeof(Obj));
-	var -> name = name;
-	var -> ty = ty;
-	push_var_to_scope(var);	// push to current scope;
-	return var;
-}
-
-// add to locals
-static Obj *new_lvar(char *name, Type *ty) {
-	Obj *var = new_var(name, ty);
-	var -> next = locals;
-	locals = var;
-	return var;
-}
-
-static char *get_ident(Token *tok) {
-	if (tok -> kind != TK_IDENT)
-		error("get_ident: expected identifier");
-	return strndup(tok -> loc, tok -> len);
-}
-
-static int get_number(Token *tok) {
-	if (tok->kind != TK_NUM)
-		error("expected a number: get_number");
-	return tok->val;
-}
-
-
 static Node *declaration(Token **rest, Token *tok);
-
 static Node *mul(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
 static Node *unary(Token **rest, Token *tok);
@@ -95,7 +26,6 @@ static Node *new_node(Nodekind kind) {
 static Node *new_var_node(Obj *var) {
 	Node *node = new_node(ND_VAR);
 	node -> var = var;
-	push_var_to_scope(var);
 	return node;
 }
 
@@ -212,7 +142,7 @@ static Node *declaration(Token **rest, Token *tok) {
 		if (i++ > 0)
 			tok = skip(tok, ",");
 		Type *ty = declarator(&tok, tok, basety);
-		Obj *var = new_lvar(get_ident(ty -> decl), ty);
+		Obj *var = new_lvar(get_ident(ty -> decl), ty, &locals);
 
 		if (!equal(tok, "="))
 			continue;

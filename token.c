@@ -15,7 +15,7 @@ static int read_punct(char *p) {
 	return ispunct(*p) ? 1 : 0;
 }
 
-static int get_number(Token *tok) {
+static int get_numer_from_tok(Token *tok) {
 	if (tok -> kind != TK_NUM)
 		error("expected a number");
 	return tok -> val;

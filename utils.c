@@ -33,3 +33,15 @@ bool consume_if_same(Token **rest, Token *tok, char *str) {
 	*rest = tok;
 	return false;
 }
+
+char *get_ident(Token *tok) {
+	if (tok -> kind != TK_IDENT)
+		error("get_ident: expected identifier");
+	return strndup(tok -> loc, tok -> len);
+}
+
+int get_number(Token *tok) {
+	if (tok->kind != TK_NUM)
+		error("expected a number: get_number");
+	return tok->val;
+}
