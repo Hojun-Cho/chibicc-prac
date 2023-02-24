@@ -2,6 +2,13 @@
 
 Type *ty_int = &(Type){TY_INT, 8};
 
+Type *func_type(Type *return_ty) {
+	Type *ty = calloc(1, sizeof(Type));
+	ty -> kind = TY_FUNC;
+	ty -> return_ty = return_ty;
+	return ty;
+}
+
 Type *pointer_to(Type *base) {
 	Type *ty = calloc(1, sizeof(Type));
 	ty -> kind = TY_PTR;

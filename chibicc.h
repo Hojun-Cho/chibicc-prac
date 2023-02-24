@@ -76,6 +76,8 @@ struct Obj {
 };
 
 struct Function {
+	Function *next;
+	char *name;
 	Node *body;
 	Obj *locals;
 	int stack_size;
@@ -85,6 +87,7 @@ typedef enum {
 	TY_INT,
 	TY_PTR,
 	TY_ARRAY,
+	TY_FUNC,
 }Typekind;
 
 struct Type {
@@ -93,6 +96,7 @@ struct Type {
 	Type *base;
 	Token *decl;
 	int array_len;
+	Type *return_ty;
 };
 
 extern Type *ty_int;
@@ -118,5 +122,6 @@ Function *parse(Token *tok);
 void code_gen(Function *prog);
 bool is_integer(Type *ty);
 void add_type(Node *node);
+Type *func_type(Type *return_ty);
 Type *pointer_to(Type *base); 
 Type *array_of(Type *bse, int size);

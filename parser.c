@@ -58,9 +58,8 @@ static Node *new_num(int val) {
 
 // compound-stmt = (declaration | stmt)* "}"
 static Node *compound_stmt(Token **rest, Token *tok) {
-	Node head;
+	Node head = {};
 	Node *cur = &head;
-
 	enter_scope();
 	// stmt type is result of stmt
 	while (!equal(tok, "}")) {
@@ -107,8 +106,12 @@ static Node *stmt(Token **rest, Token *tok) {
 	return expr_stmt(rest, tok);
 }
 
-// type-suffix = "[" num "]" type-suffix
+// type-suffix =  "(" ... ")" | "[" num "]" type-suffix
 static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
+	if (equal(tok, "(")) {
+		*rest = skip(tok->next, ")"); // zero arg
+		return func_type(ty);
+	}
 	if (equal(tok, "[")) {
 		int size = get_number(tok -> next);
 		tok = skip(tok->next->next, "]");
@@ -377,14 +380,26 @@ static Node *primary(Token **rest, Token *tok) {
 	error("expected an expression");
 }
 
+static Function *function(Token **rest, Token *tok) {
+	Type *ty = declspec(&tok, tok);
+	ty = declarator(&tok, tok, ty);
+	locals = NULL;
+	Function *fn = calloc(1, sizeof(Function));
+	fn -> name = get_ident(ty -> decl);
+
+	tok = skip(tok, "{");
+	fn -> body = compound_stmt(rest, tok);
+	fn -> locals = locals;
+	return fn;
+}
+
 // program = stmt*
 Function *parse(Token *tok) {
-	locals = NULL;
-	enter_scope();
-	tok = skip(tok, "{");
-	Function *prog = calloc(1, sizeof(Function));
-	prog -> body = compound_stmt(&tok, tok);
-	prog->locals = locals; //prog must need locals
-	leave_scope();
-	return prog;
+	Function head = {};
+	Function *cur = &head;
+
+	// ToDo : register function to global variable
+	while (tok -> kind != TK_EOF)
+		cur = cur -> next = function(&tok, tok);
+	return head.next;
 }

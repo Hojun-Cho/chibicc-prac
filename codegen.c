@@ -1,5 +1,7 @@
 #include "chibicc.h"
 
+static Function *current_fn;
+
 static void gen_stmt(Node *node);
 static void gen_expr(Node *node);
 
@@ -111,7 +113,7 @@ static void gen_stmt(Node *node) {
 	}
 	if (node -> kind == ND_RETURN) {
 		gen_expr(node -> lhs);
-		printf("	jmp .L.return\n");
+		printf("	jmp .L.return.%s\n", current_fn->name);
 		return;
 	}
 	if (node -> kind == ND_EXPR_STMT) {
@@ -137,28 +139,35 @@ static void gen_stmt(Node *node) {
 }
 
 static void assign_lvar_offset(Function *prog) {
-	int offset = 0;
-	for (Obj *var = prog -> locals; var; var = var -> next) {
-		offset += var -> ty -> size;
-		var -> offset -= offset;
+	for (Function *fn = prog; fn; fn = fn->next) {
+		int offset = 0;
+		for (Obj *var = fn -> locals; var; var = var->next) {
+			offset += var -> ty -> size;
+			var -> offset = -offset;
+		}
+		fn -> stack_size = offset;
 	}
-	prog -> stack_size = offset;
 }
 
 void code_gen(Function *prog) {
-	assign_lvar_offset(prog);
+	assign_lvar_offset(prog); // cal each 
+	for (Function *fn = prog; fn; fn = fn->next) {
+		printf("	.global %s\n", fn->name);
+		printf("%s:\n", fn->name);
+		current_fn = fn;
 
-	printf("	.global main\n");
-	printf("main:\n");
+		// Prologue
+		printf("	push %%rbp\n");
+		printf("	mov %%rsp, %%rbp\n");
+		printf("	sub $%d, %%rsp\n", fn->stack_size);
 
-	printf("	push %%rbp\n");
-	printf("	mov %%rsp, %%rbp\n");
-	printf("	sub $%d, %%rsp\n", prog->stack_size);
-
-	gen_stmt(prog->body);
-
-	printf(".L.return:\n");
-	printf("	mov %%rbp, %%rsp\n");
-	printf("	pop %%rbp\n");
-	printf("	ret\n");
+		// Emit code
+		gen_stmt(fn->body);
+	
+		// Epilogue
+		printf(".L.return.%s:\n", fn->name);
+		printf("	mov %%rbp, %%rsp\n");
+		printf("	pop %%rbp\n");
+		printf("	ret\n");
+	}
 }
