@@ -112,7 +112,6 @@ Obj *find_var(Token *tok);
 void enter_scope(void);
 void leave_scope(void);
 Obj *new_var(char *name, Type *ty);
-Obj *new_lvar(char *name, Type *ty, Obj **locals);
 
 Token *tokenize(char *p);
 Function *parse(Token *tok);

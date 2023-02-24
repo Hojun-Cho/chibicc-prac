@@ -2,6 +2,14 @@
 
 static Obj *locals;
 
+static Obj *new_lvar(char *name, Type *ty) {
+	Obj *var = new_var(name, ty);
+	var -> next = locals;
+	locals = var;
+	return var;
+
+}
+
 static Node *declaration(Token **rest, Token *tok);
 static Node *mul(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
@@ -142,7 +150,7 @@ static Node *declaration(Token **rest, Token *tok) {
 		if (i++ > 0)
 			tok = skip(tok, ",");
 		Type *ty = declarator(&tok, tok, basety);
-		Obj *var = new_lvar(get_ident(ty -> decl), ty, &locals);
+		Obj *var = new_lvar(get_ident(ty -> decl), ty);
 
 		if (!equal(tok, "="))
 			continue;
@@ -338,7 +346,7 @@ static Node *postfix(Token **rest, Token *tok) {
 	return node;
 }
 
-// primary = "(" expr ")" | sizeof unary  | num 
+// primary = "(" expr ")" | sizeof unary  | num
 static Node *primary(Token **rest, Token *tok) {
 	Node *node;
 
@@ -347,13 +355,13 @@ static Node *primary(Token **rest, Token *tok) {
 		*rest = skip(tok, ")");
 		return node;
 	}
-	
+
 	if (equal(tok, "sizeof")) {
 		Node *node = unary(rest, tok -> next);
 		add_type(node);
 		return new_num(node -> ty -> size);
 	}
-	
+
 	if (tok -> kind == TK_IDENT) {
 		Obj *var = find_var(tok);
 		if (var == NULL)
@@ -376,7 +384,7 @@ Function *parse(Token *tok) {
 	tok = skip(tok, "{");
 	Function *prog = calloc(1, sizeof(Function));
 	prog -> body = compound_stmt(&tok, tok);
-	prog->locals = locals;
+	prog->locals = locals; //prog must need locals
 	leave_scope();
 	return prog;
 }

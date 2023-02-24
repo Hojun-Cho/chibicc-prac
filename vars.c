@@ -47,11 +47,3 @@ Obj *new_var(char *name, Type *ty) {
 	push_var_to_scope(var);	// push to current scope;
 	return var;
 }
-
-// add to locals
-Obj *new_lvar(char *name, Type *ty, Obj **locals) {
-	Obj *var = new_var(name, ty);
-	var -> next = *locals;
-	*locals = var;
-	return var;
-}
