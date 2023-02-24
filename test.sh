@@ -99,5 +99,8 @@ assert 2 '{ int x[2][3]; int *y=x; y[2]=2; return x[0][2]; }'
 assert 3 '{ int x[2][3]; int *y=x; y[3]=3; return x[1][0]; }'
 assert 4 '{ int x[2][3]; int *y=x; y[4]=4; return x[1][1]; }'
 assert 5 '{ int x[2][3]; int *y=x; y[5]=5; return x[1][2]; }'
+assert 8 '{int x;return sizeof(x);}'
+assert 16 '{int x[2]; return sizeof(x);}'
+assert 48 '{ int x[2][3]; return sizeof(x);}'
 echo OK
 

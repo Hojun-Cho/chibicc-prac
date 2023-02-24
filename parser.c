@@ -338,7 +338,7 @@ static Node *postfix(Token **rest, Token *tok) {
 	return node;
 }
 
-// primary = "(" expr ")" | num
+// primary = "(" expr ")" | sizeof unary  | num 
 static Node *primary(Token **rest, Token *tok) {
 	Node *node;
 
@@ -347,6 +347,13 @@ static Node *primary(Token **rest, Token *tok) {
 		*rest = skip(tok, ")");
 		return node;
 	}
+	
+	if (equal(tok, "sizeof")) {
+		Node *node = unary(rest, tok -> next);
+		add_type(node);
+		return new_num(node -> ty -> size);
+	}
+	
 	if (tok -> kind == TK_IDENT) {
 		Obj *var = find_var(tok);
 		if (var == NULL)
