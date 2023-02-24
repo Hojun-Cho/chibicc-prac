@@ -48,7 +48,6 @@ typedef enum {
 // AST node type
 typedef struct Obj Obj;
 typedef struct Node Node;
-typedef struct Function Function;
 typedef struct Type Type;
 
 struct Node {
@@ -72,12 +71,12 @@ struct Obj {
 	Obj *next;
 	Type *ty;
 	char *name;
-	int offset;
-};
+	bool is_local;
 
-struct Function {
-	Function *next;
-	char *name;
+	int offset; // Local var offset
+	bool is_function; // func or var  
+
+	// Function;
 	Node *body;
 	Obj *locals;
 	int stack_size;
@@ -118,8 +117,8 @@ void leave_scope(void);
 Obj *new_var(char *name, Type *ty);
 
 Token *tokenize(char *p);
-Function *parse(Token *tok);
-void code_gen(Function *prog);
+Obj *parse(Token *tok);
+void code_gen(Obj *prog);
 bool is_integer(Type *ty);
 void add_type(Node *node);
 Type *func_type(Type *return_ty);

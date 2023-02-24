@@ -106,6 +106,5 @@ assert 48 'int main() { int x[2][3]; return sizeof(x);}'
 assert 0 'int ret_1() {return 1;} int ret_2() {return 2;} int main() {return 0;}'
 
 assert 2 'int main() { int x=1; {int x=2; {int x= 3;} return x;}}' 
-
 echo OK
 

@@ -1,6 +1,7 @@
 #include "chibicc.h"
 
 static Obj *locals;
+static Obj *globals;
 
 static Obj *new_lvar(char *name, Type *ty) {
 	Obj *var = new_var(name, ty);
@@ -9,6 +10,14 @@ static Obj *new_lvar(char *name, Type *ty) {
 	return var;
 
 }
+
+static Obj *new_gvar(char *name, Type *ty) {
+	Obj *var = new_var(name, ty);
+	var -> next = globals;
+	globals = var;
+	return var;
+}
+
 
 static Node *declaration(Token **rest, Token *tok);
 static Node *mul(Token **rest, Token *tok);
@@ -106,11 +115,17 @@ static Node *stmt(Token **rest, Token *tok) {
 	return expr_stmt(rest, tok);
 }
 
+static Type *func_params(Token **rest, Token *tok, Type *ty) {
+	equal(tok, ")");
+	ty = func_type(ty);
+	*rest = tok -> next;
+	return ty;
+}
+
 // type-suffix =  "(" ... ")" | "[" num "]" type-suffix
 static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	if (equal(tok, "(")) {
-		*rest = skip(tok->next, ")"); // zero arg
-		return func_type(ty);
+		return func_params(rest, tok -> next, ty);
 	}
 	if (equal(tok, "[")) {
 		int size = get_number(tok -> next);
@@ -380,26 +395,37 @@ static Node *primary(Token **rest, Token *tok) {
 	error("expected an expression");
 }
 
-static Function *function(Token **rest, Token *tok) {
-	Type *ty = declspec(&tok, tok);
-	ty = declarator(&tok, tok, ty);
-	locals = NULL;
-	Function *fn = calloc(1, sizeof(Function));
-	fn -> name = get_ident(ty -> decl);
+static Token *function(Token *tok, Type *basety) {
+	enter_scope();	
+	
+	Type *ty = declarator(&tok, tok, basety);
+	Obj *fn = new_gvar(get_ident(ty -> decl), ty);
+	fn -> is_function = true;
 
+	locals = NULL;
 	tok = skip(tok, "{");
-	fn -> body = compound_stmt(rest, tok);
+	fn -> body = compound_stmt(&tok, tok);
 	fn -> locals = locals;
-	return fn;
+	leave_scope();
+	return tok;
 }
 
-// program = stmt*
-Function *parse(Token *tok) {
-	Function head = {};
-	Function *cur = &head;
+static bool is_function(Token *tok) {
+	Type dummy = {};
+	Type *ty = declarator(&tok, tok, &dummy);
+	return ty -> kind = TY_FUNC;
+}
 
-	// ToDo : register function to global variable
-	while (tok -> kind != TK_EOF)
-		cur = cur -> next = function(&tok, tok);
-	return head.next;
+// program = (function-definition | global_variable)*
+Obj *parse(Token *tok) {
+	globals = NULL;
+	while (tok -> kind != TK_EOF) {
+		Type *basety = declspec(&tok, tok);
+		if (is_function(tok)) {
+			tok = function(tok, basety);
+			continue;
+		}
+		error("global variable can't declare not yet");
+	}
+	return globals;
 }
