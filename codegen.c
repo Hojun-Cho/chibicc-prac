@@ -30,8 +30,13 @@ static void store(void) {
 }
 
 static void gen_addr(Node *node) {
-	if (node -> kind == ND_VAR)
-		printf("	lea %d(%%rbp), %%rax\n", node -> var -> offset);
+	if (node -> kind == ND_VAR) {
+		if (node -> var -> is_local) 
+			printf("	lea %d(%%rbp), %%rax\n", node -> var -> offset);
+		else
+			printf("	lea %s(%%rip), %%rax\n", node -> var -> name);
+		return;
+	}
 	else if (node -> kind == ND_DEREF)
 		gen_expr(node -> lhs);
 	return;
@@ -151,8 +156,23 @@ static void assign_lvar_offset(Obj *prog) {
 	}
 }
 
+static void emit_data(Obj *prog) {
+
+}
+
+
 void code_gen(Obj *prog) {
-	assign_lvar_offset(prog); // cal each
+	assign_lvar_offset(prog);
+
+	for (Obj *var = prog; var; var = var -> next) {
+		if (var -> is_function) 
+			continue;
+		printf("	.data\n");
+		printf("	.global %s\n", var -> name);
+		printf("%s:\n", var -> name);
+		printf("	.zero %d\n", var -> ty -> size);
+	}
+	
 	for (Obj *fn = prog; fn; fn = fn->next) {
 		if (fn -> is_function == false)
 			continue;

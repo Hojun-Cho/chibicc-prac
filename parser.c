@@ -5,6 +5,7 @@ static Obj *globals;
 
 static Obj *new_lvar(char *name, Type *ty) {
 	Obj *var = new_var(name, ty);
+	var -> is_local = true;
 	var -> next = locals;
 	locals = var;
 	return var;
@@ -17,7 +18,6 @@ static Obj *new_gvar(char *name, Type *ty) {
 	globals = var;
 	return var;
 }
-
 
 static Node *declaration(Token **rest, Token *tok);
 static Node *mul(Token **rest, Token *tok);
@@ -410,10 +410,21 @@ static Token *function(Token *tok, Type *basety) {
 	return tok;
 }
 
+static Token *global_variable(Token *tok, Type *basety) {
+	bool first = true;
+
+	Type *ty = declarator(&tok, tok, basety);
+	new_gvar(get_ident(ty -> decl), ty);
+	tok = skip(tok, ";");
+	return tok;
+}
+
 static bool is_function(Token *tok) {
+	if (equal(tok -> next, ";"))
+		return false;
 	Type dummy = {};
 	Type *ty = declarator(&tok, tok, &dummy);
-	return ty -> kind = TY_FUNC;
+	return ty -> kind == TY_FUNC;
 }
 
 // program = (function-definition | global_variable)*
@@ -425,7 +436,7 @@ Obj *parse(Token *tok) {
 			tok = function(tok, basety);
 			continue;
 		}
-		error("global variable can't declare not yet");
+		tok = global_variable(tok, basety);
 	}
 	return globals;
 }
