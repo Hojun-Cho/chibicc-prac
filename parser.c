@@ -94,7 +94,8 @@ static Node *stmt(Token **rest, Token *tok) {
 	Node *node;
 
 	if (equal(tok, "return")) {
-		node = new_unary(ND_RETURN, expr(&tok, tok -> next));
+		node = new_node(ND_RETURN);
+		node -> lhs = expr(&tok, tok -> next);
 		*rest = skip(tok, ";");
 		return node;
 	}
