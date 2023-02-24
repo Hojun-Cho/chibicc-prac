@@ -7,7 +7,7 @@ int main(int argc, char **argv) {
 	}
 
 	Token *tok = tokenize(argv[1]);
-	Function *prog = parse(tok);
+	Obj *prog = parse(tok);
 	code_gen(prog);
 
 	return 0;
