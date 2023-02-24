@@ -413,9 +413,13 @@ static Token *function(Token *tok, Type *basety) {
 static Token *global_variable(Token *tok, Type *basety) {
 	bool first = true;
 
-	Type *ty = declarator(&tok, tok, basety);
-	new_gvar(get_ident(ty -> decl), ty);
-	tok = skip(tok, ";");
+	while (consume_if_same(&tok, tok, ";") == false) {
+		if (first == false)
+			tok = skip(tok, ",");
+		first = false;
+		Type *ty = declarator(&tok, tok, basety);
+		new_gvar(get_ident(ty -> decl), ty);
+	}
 	return tok;
 }
 
