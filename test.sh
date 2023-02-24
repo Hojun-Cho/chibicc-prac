@@ -4,7 +4,7 @@ assert() {
   input="$2"
 
   ./chibicc "$input" > tmp.s || exit
-  gcc -static -o tmp tmp.s
+  gcc -static -o tmp tmp.s test.s
   ./tmp
   actual="$?"
 
@@ -120,5 +120,7 @@ assert 3 'int x[4]; int main() { x[0]=0; x[1]=1; x[2]=2; x[3]=3; return x[3]; }'
 assert 8 'int x; int main() { return sizeof(x); }'
 assert 32 'int x[4]; int main() { return sizeof(x); }'
 assert 0 'int x,y[100],z[10]; int main() {y[49] = 0; return y[49];}'
+assert 32 'int main() { return ret_32();}'
+assert 64 'int main() {return ret_64();}'
 echo OK
 

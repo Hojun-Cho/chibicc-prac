@@ -68,6 +68,9 @@ static void gen_expr(Node *node) {
 			gen_expr(node -> rhs);
 			store();
 			return;
+		case ND_FUNCALL:
+			printf("	call %s\n", node -> funcname);
+			return;
 	}
 
 	gen_expr(node -> rhs);

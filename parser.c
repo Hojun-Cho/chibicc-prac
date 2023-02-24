@@ -317,7 +317,6 @@ static Node *add(Token **rest, Token *tok) {
 
 }
 
-
 // mul = unary ("*" unary | "/" unary)*
 static Node *mul(Token **rest, Token *tok) {
 	Node *node = unary(&tok, tok);
@@ -375,12 +374,19 @@ static Node *primary(Token **rest, Token *tok) {
 	}
 
 	if (equal(tok, "sizeof")) {
-		Node *node = unary(rest, tok -> next);
+		node = unary(rest, tok -> next);
 		add_type(node);
 		return new_num(node -> ty -> size);
 	}
 
 	if (tok -> kind == TK_IDENT) {
+		// if func call
+		if (equal(tok -> next, "(")) {
+			node = new_node(ND_FUNCALL);
+			node -> funcname = strndup(tok -> loc, tok -> len);
+			*rest = skip(tok -> next -> next, ")");
+			return node;
+		}
 		Obj *var = find_var(tok);
 		if (var == NULL)
 			error("undefined variable");

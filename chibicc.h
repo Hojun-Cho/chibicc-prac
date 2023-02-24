@@ -43,6 +43,7 @@ typedef enum {
 	ND_IF,
 	ND_ADDR, // &
 	ND_DEREF, //*
+	ND_FUNCALL,
 } Nodekind;
 
 // AST node type
@@ -65,6 +66,7 @@ struct Node {
 	Node *then;
 	Node *_else;
 
+	char *funcname;
 };
 
 struct Obj {

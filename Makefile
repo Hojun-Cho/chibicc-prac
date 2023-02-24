@@ -6,6 +6,7 @@ chibicc: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 test: chibicc
+	gcc -S test.c
 	./test.sh
 
 clean:
