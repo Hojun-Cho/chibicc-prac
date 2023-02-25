@@ -257,17 +257,19 @@ static Node *relational(Token **rest, Token *tok) {
 	}
 }
 
-//  pointer + int => valid
-// int + pointer => invalid
 static Node *new_add(Node *lhs, Node *rhs) {
 	add_type(lhs);
 	add_type(rhs);
 
 	if (is_integer(lhs -> ty) && is_integer(rhs -> ty))
 		return new_binary(ND_ADD, lhs, rhs);
-
 	if (lhs -> ty -> base && rhs -> ty -> base)
 		error("lhs and rhs both have base");
+	if (is_integer(lhs -> ty) && rhs -> ty -> base) {
+		Node *tmp = lhs;
+		lhs = rhs;
+		rhs = tmp;
+	}
 
 	// ptr + num
 	rhs = new_binary(ND_MUL, rhs, new_num(lhs->ty->base->size));
