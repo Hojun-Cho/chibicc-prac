@@ -73,8 +73,11 @@ static void gen_expr(Node *node) {
 							 int argc = 0;
 							 for (Node *arg = node -> args; arg; arg = arg -> next) {
 								 gen_expr(arg);
-								 printf("	mov %%rax, %s\n", argreg64[argc++]);
+								 push();
+								 argc++;
 							 }
+							for (int i = argc - 1; i >= 0; i--)
+								pop_to(argreg64[i]);
 
 							 printf("	call %s\n", node -> funcname);
 							 return;
