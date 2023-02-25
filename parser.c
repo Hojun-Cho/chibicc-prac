@@ -388,7 +388,8 @@ static Node *funcall(Token **rest, Token *tok) {
 	return node;
 }
 
-// primary = "(" expr ")" | funcall  |sizeof unary  | num
+// primary = "(" expr ")" | funcall | sizeof unary | num
+//				| char
 static Node *primary(Token **rest, Token *tok) {
 	Node *node;
 
@@ -413,7 +414,8 @@ static Node *primary(Token **rest, Token *tok) {
 		*rest = tok -> next;
 		return new_var_node(var);
 	}
-	if (tok -> kind == TK_NUM) {
+
+	if (tok -> kind == TK_NUM || tok -> kind == TK_CHAR) {
 		node = new_num(tok -> val);
 		*rest = tok -> next;
 		return node;
@@ -422,8 +424,8 @@ static Node *primary(Token **rest, Token *tok) {
 }
 
 static Token *function(Token *tok, Type *basety) {
-	enter_scope();	
-	
+	enter_scope();
+
 	Type *ty = declarator(&tok, tok, basety);
 	Obj *fn = new_gvar(get_ident(ty -> decl), ty);
 	fn -> is_function = true;

@@ -31,7 +31,6 @@ bool is_integer(Type *ty) {
 	return ty -> kind == TY_INT || ty -> kind == TY_CHAR;
 }
 
-
 void add_type(Node *node) {
 	if (!node || node->ty)
 		return;
@@ -58,7 +57,7 @@ void add_type(Node *node) {
 		case ND_NE:
 		case ND_LT:
 		case ND_LE:
-		case ND_NUM:
+		case ND_NUM: 
 		case ND_FUNCALL:
 			node -> ty = ty_int;
 			return;

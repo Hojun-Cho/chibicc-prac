@@ -12,16 +12,20 @@ typedef enum {
 	TK_PUNCT, // Punctuators
 	TK_NUM, // Numberic literals
 	TK_KEYWORD,
+	TK_CHAR,
 	TK_EOF,
 } Tokenkind;
 
 typedef struct Token Token;
+typedef struct Type Type;
 struct Token{
 	Tokenkind kind;
 	Token *next;
 	int val;
 	char *loc;
 	int len;
+
+	Type *ty;
 };
 
 typedef enum {
@@ -49,7 +53,6 @@ typedef enum {
 // AST node type
 typedef struct Obj Obj;
 typedef struct Node Node;
-typedef struct Type Type;
 
 struct Node {
 	Nodekind kind;	// Node kind
@@ -59,7 +62,7 @@ struct Node {
 	Node *lhs;	// Left-hand side
 	Node *rhs;	// Right-hand side
 	Obj *var;
-	int val;	// Used if kind == ND_NUM
+	int val;	// Used if kind == ND_NUM || CHAR
 	
 	// "if stmt
 	Node *cond;

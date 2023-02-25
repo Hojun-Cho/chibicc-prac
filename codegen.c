@@ -1,5 +1,6 @@
 #include "chibicc.h"
 
+static char *argreg8[] = {"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
 static char *argreg64[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
 static Obj *current_fn;
 
@@ -22,12 +23,18 @@ static void pop_to(char *arg) {
 static void load(Type *ty) {
 	if (ty -> kind == TY_ARRAY)
 		return;
-	printf("	mov (%%rax), %%rax\n");
+	if (ty -> size == 1)
+		printf("	movsbq (%%rax), %%rax\n");
+	else
+		printf("	mov (%%rax), %%rax\n");
 }
 
-static void store(void) {
+static void store(Type *ty) {
 	pop_to("%rdi");
-	printf("	mov %%rax, (%%rdi)\n");
+	if (ty -> size == 1)
+		printf("	mov %%al, (%%rdi)\n");
+	else
+		printf("	mov %%rax, (%%rdi)\n");
 }
 
 static void gen_addr(Node *node) {
@@ -67,7 +74,7 @@ static void gen_expr(Node *node) {
 			gen_addr(node -> lhs);
 			push(); // push rax
 			gen_expr(node -> rhs);
-			store();
+			store(node -> ty);
 			return;
 		case ND_FUNCALL: {
 							 int argc = 0;
@@ -76,8 +83,8 @@ static void gen_expr(Node *node) {
 								 push();
 								 argc++;
 							 }
-							for (int i = argc - 1; i >= 0; i--)
-								pop_to(argreg64[i]);
+							 for (int i = argc - 1; i >= 0; i--)
+								 pop_to(argreg64[i]);
 
 							 printf("	call %s\n", node -> funcname);
 							 return;

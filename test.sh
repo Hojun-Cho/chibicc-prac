@@ -136,6 +136,10 @@ assert 2 'int main() { char x=1; char y=2; return y; }'
 
 assert 1 'int main() { char x; return sizeof(x); }'
 assert 10 'int main() { char x[10]; return sizeof(x); }'
+
+assert 97 "int main() { char x = 'a'; return x;}"
+assert 49 "int main() { char x = '1'; return x;}"
+assert 49 "int main(){ int x=3; char y ='1'; int z = 6; return y;}"
 #assert 1 'int main() { return sub_char(7, 3, 3); } int sub_char(char a, char b, char c) { return a-b-c; }'
 echo OK
 

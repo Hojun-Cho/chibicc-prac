@@ -30,8 +30,8 @@ static Token *new_token(Tokenkind kind, char *start, char *end) {
 }
 
 static bool is_keyword(Token *tok) {
-	static char *kw[] = {"return", "if", "else", 
-		"int", "char", 
+	static char *kw[] = {"return", "if", "else",
+		"int", "char",
 		"sizeof"};
 
 	for (int i=0; i< sizeof(kw) / sizeof(*kw); i++)
@@ -46,6 +46,17 @@ static void convert_if_keyword(Token *tok) {
 			t -> kind = TK_KEYWORD;
 }
 
+static Token *read_char(char *start) {
+	char *p = start + 1;
+	char c = *p++;
+	if (*p != '\'')
+		error("unclosed char");
+
+	Token *tok = new_token(TK_CHAR, start, p + 1);
+	tok -> val = c;
+	return tok;
+}
+
 Token *tokenize(char *p) {
 	Token head = {};
 	Token *cur = &head;
@@ -55,6 +66,11 @@ Token *tokenize(char *p) {
 	while (*p) {
 		if (isspace(*p)) {
 			p++;
+			continue;
+		}
+		if (*p == '\'') {
+			cur = cur -> next = read_char(p);
+			p += 3;
 			continue;
 		}
 
