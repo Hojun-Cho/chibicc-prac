@@ -364,7 +364,25 @@ static Node *postfix(Token **rest, Token *tok) {
 	return node;
 }
 
-// primary = "(" expr ")" | sizeof unary  | num
+// funcall = ident "(" (assign ("," assign)*)? ")"
+static Node *funcall(Token **rest, Token *tok) {
+	Node *node = new_node(ND_FUNCALL);
+	node -> funcname = strndup(tok->loc, tok->len);
+	tok = tok -> next -> next;
+	Node head = {};
+	Node *cur = &head;
+
+	while (!equal(tok, ")")) {
+		if (cur != &head)
+			tok = skip(tok, ",");
+		cur = cur -> next = assign(&tok, tok);
+	}
+	*rest = skip(tok, ")");
+	node->args = head.next;
+	return node;
+}
+
+// primary = "(" expr ")" | funcall  |sizeof unary  | num
 static Node *primary(Token **rest, Token *tok) {
 	Node *node;
 
@@ -381,13 +399,8 @@ static Node *primary(Token **rest, Token *tok) {
 	}
 
 	if (tok -> kind == TK_IDENT) {
-		// if func call
-		if (equal(tok -> next, "(")) {
-			node = new_node(ND_FUNCALL);
-			node -> funcname = strndup(tok -> loc, tok -> len);
-			*rest = skip(tok -> next -> next, ")");
-			return node;
-		}
+		if (equal(tok -> next, "("))
+			return funcall(rest, tok);
 		Obj *var = find_var(tok);
 		if (var == NULL)
 			error("undefined variable");

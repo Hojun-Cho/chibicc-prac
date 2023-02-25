@@ -67,6 +67,7 @@ struct Node {
 	Node *_else;
 
 	char *funcname;
+	Node *args;
 };
 
 struct Obj {

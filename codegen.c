@@ -1,5 +1,6 @@
 #include "chibicc.h"
 
+static char *argreg64[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
 static Obj *current_fn;
 
 static void gen_stmt(Node *node);
@@ -68,9 +69,16 @@ static void gen_expr(Node *node) {
 			gen_expr(node -> rhs);
 			store();
 			return;
-		case ND_FUNCALL:
-			printf("	call %s\n", node -> funcname);
-			return;
+		case ND_FUNCALL: {
+							 int argc = 0;
+							 for (Node *arg = node -> args; arg; arg = arg -> next) {
+								 gen_expr(arg);
+								 printf("	mov %%rax, %s\n", argreg64[argc++]);
+							 }
+
+							 printf("	call %s\n", node -> funcname);
+							 return;
+						 }
 	}
 
 	gen_expr(node -> rhs);

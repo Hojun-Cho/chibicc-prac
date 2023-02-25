@@ -123,5 +123,13 @@ assert 0 'int x,y[100],z[10]; int main() {y[49] = 0; return y[49];}'
 assert 32 'int main() { return ret_32();}'
 assert 64 'int main() {return ret_64();}'
 assert 96 'int main() {return ret_32() + ret_64();}'
+assert 3  'int main() {return add(1,2);}'
+assert 8 'int main() { return add(3, 5); }'
+assert 2 'int main() { return sub(5, 3); }'
+assert 21 'int main() { return add6(1,2,3,4,5,6); }'
+#assert 66 'int main() { return add6(1,2,add6(3,4,5,6,7,8),9,10,11); }'
+#assert 136 'int main() { return add6(1,2,add6(3,add6(4,5,6,7,8,9),10,11,12,13),14,15,16); }'
+
+
 echo OK
 
