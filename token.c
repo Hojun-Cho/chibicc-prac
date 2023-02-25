@@ -48,12 +48,27 @@ static void convert_if_keyword(Token *tok) {
 
 static Token *read_char(char *start) {
 	char *p = start + 1;
-	char c = *p++;
-	if (*p != '\'')
-		error("unclosed char");
-
+	char res;
+	
+	if (*p == '\\' && *(p + 1) != '\'') { // '\n' || '\0'
+		p++;
+		switch (*p) {
+			case 'n':
+				res = '\n';
+				break;
+			case '0' :
+				res = '\0';
+				break;
+			default :
+				error ("unkown char");
+		}
+	}
+	else 
+		res = *p;
+	if (*(++p) != '\'')
+		error ("unclosed char");
 	Token *tok = new_token(TK_CHAR, start, p + 1);
-	tok -> val = c;
+	tok -> val = res;
 	return tok;
 }
 
@@ -83,7 +98,7 @@ Token *tokenize(char *p) {
 		}
 		if (*p == '\'') {
 			cur = cur -> next = read_char(p);
-			p += 3;
+			p += cur -> len;
 			continue;
 		}
 		if (*p == '"') {
