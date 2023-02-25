@@ -1,6 +1,7 @@
 #include "chibicc.h"
 
 Type *ty_int = &(Type){TY_INT, 8};
+Type *ty_char = &(Type){TY_CHAR, 1};
 
 Type *func_type(Type *return_ty) {
 	Type *ty = calloc(1, sizeof(Type));
@@ -27,7 +28,7 @@ Type *array_of(Type *base, int len) {
 }
 
 bool is_integer(Type *ty) {
-	return ty -> kind == TY_INT;
+	return ty -> kind == TY_INT || ty -> kind == TY_CHAR;
 }
 
 
