@@ -13,6 +13,7 @@ typedef enum {
 	TK_NUM, // Numberic literals
 	TK_KEYWORD,
 	TK_CHAR,
+	TK_STR,
 	TK_EOF,
 } Tokenkind;
 
@@ -26,6 +27,7 @@ struct Token{
 	int len;
 
 	Type *ty;
+	char *str;
 };
 
 typedef enum {
@@ -81,6 +83,7 @@ struct Obj {
 
 	int offset; // Local var offset
 	bool is_function; // func or var  
+	char *init_data; // only for global var
 
 	// Function;
 	Node *body;

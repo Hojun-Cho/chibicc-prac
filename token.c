@@ -57,6 +57,19 @@ static Token *read_char(char *start) {
 	return tok;
 }
 
+// unnamed string literal
+static Token *read_string_literal(char *start) {
+	char *p = start + 1;
+	for (; *p != '"'; p++)
+		if (*p == '\0')
+			error("unclosed string");
+
+	Token *tok = new_token(TK_STR, start, p + 1);
+	tok -> ty = array_of(ty_char, p - start);
+	tok -> str = strndup(start + 1, p - start - 1);
+	return tok;
+}
+
 Token *tokenize(char *p) {
 	Token head = {};
 	Token *cur = &head;
@@ -73,7 +86,11 @@ Token *tokenize(char *p) {
 			p += 3;
 			continue;
 		}
-
+		if (*p == '"') {
+			cur = cur -> next = read_string_literal(p);
+			p += cur -> len;
+			continue;
+		}
 		if (is_ident1(*p)) {
 			start = p;
 			while (is_ident2(*p))

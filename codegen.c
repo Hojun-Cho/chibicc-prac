@@ -164,6 +164,10 @@ static void gen_stmt(Node *node) {
 	error("invalid stmt");
 }
 
+static int align_to(int n, int align) {
+	return (n + align - 1) / align * align;
+}
+
 static void assign_lvar_offset(Obj *prog) {
 	for (Obj *fn = prog; fn; fn = fn->next) {
 		if (fn -> is_function == false)
@@ -173,7 +177,7 @@ static void assign_lvar_offset(Obj *prog) {
 			offset += var -> ty -> size;
 			var -> offset = -offset;
 		}
-		fn -> stack_size = offset;
+		fn -> stack_size = align_to(offset, 16);
 	}
 }
 
@@ -184,7 +188,11 @@ static void emit_data(Obj *prog) {
 		printf("	.data\n");
 		printf("	.global %s\n", var -> name);
 		printf("%s:\n", var -> name);
-		printf("	.zero %d\n", var -> ty -> size);
+		if (var -> init_data)
+			for (int i = 0; i < var -> ty -> size; i++) // array type
+				printf("	.byte %d\n", var -> init_data[i]);
+		else
+			printf("	.zero %d\n", var -> ty -> size);
 	}
 }
 

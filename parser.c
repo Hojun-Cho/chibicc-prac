@@ -19,6 +19,19 @@ static Obj *new_gvar(char *name, Type *ty) {
 	return var;
 }
 
+static Obj *new_anon_gvar(Type *ty) {
+	static int id = 0;
+	char *buf = calloc(1, 20);
+	sprintf(buf, ".L..%d", id++);
+	return new_gvar(buf, ty);
+}
+
+static Obj *new_string_literal(char *p, Type *ty) {
+	Obj *var = new_anon_gvar(ty);
+	var->init_data = p;
+	return var;
+}
+
 static Node *declaration(Token **rest, Token *tok);
 static Node *mul(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
@@ -389,7 +402,7 @@ static Node *funcall(Token **rest, Token *tok) {
 }
 
 // primary = "(" expr ")" | funcall | sizeof unary | num
-//				| char
+//				| char | str
 static Node *primary(Token **rest, Token *tok) {
 	Node *node;
 
@@ -414,7 +427,11 @@ static Node *primary(Token **rest, Token *tok) {
 		*rest = tok -> next;
 		return new_var_node(var);
 	}
-
+	if (tok -> kind == TK_STR) {
+		Obj * var = new_string_literal(tok -> str, tok -> ty);
+		*rest = tok -> next;
+		return new_var_node(var);
+	}
 	if (tok -> kind == TK_NUM || tok -> kind == TK_CHAR) {
 		node = new_num(tok -> val);
 		*rest = tok -> next;
