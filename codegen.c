@@ -210,6 +210,13 @@ static void emit_text(Obj *prog) {
 		printf("	mov %%rsp, %%rbp\n");
 		printf("	sub $%d, %%rsp\n", fn->stack_size);
 
+		int i = 0,j = 0;
+		for (Obj *var = fn -> params; var; var = var -> next)
+			if (var -> ty -> size == 1)
+				printf("	mov %s, %d(%%rbp)\n", argreg8[i++], var -> offset);
+			else
+				printf("	mov %s, %d(%%rbp)\n", argreg64[j++], var -> offset);
+
 		// Emit code
 		gen_stmt(fn->body);
 

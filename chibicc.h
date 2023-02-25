@@ -87,6 +87,7 @@ struct Obj {
 
 	// Function;
 	Node *body;
+	Obj *params;
 	Obj *locals;
 	int stack_size;
 };
@@ -106,6 +107,8 @@ struct Type {
 	Token *decl;
 	int array_len;
 	Type *return_ty;
+	Type *params;
+	Type *next;
 };
 
 extern Type *ty_int;

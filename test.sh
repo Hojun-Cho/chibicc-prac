@@ -150,6 +150,6 @@ assert 10 "int main() {char x = '\n'; return x;}"
 assert 92 "int main() {char x ='\\'; return x;}"
 
 assert 97 "int main() {char *x = \"abcdef\"; return x[0];}"
-#assert 1 'int main() { return sub_char(7, 3, 3); } int sub_char(char a, char b, char c) { return a-b-c; }'
+assert 1 'int main() { return sub_char(7, 3, 3); } int sub_char(char a, char b, char c) { return a-b-c; }'
 echo OK
 

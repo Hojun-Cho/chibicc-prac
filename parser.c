@@ -33,6 +33,8 @@ static Obj *new_string_literal(char *p, Type *ty) {
 }
 
 static Node *declaration(Token **rest, Token *tok);
+static Type *declspec(Token **rest, Token *tok);
+static Type *declarator(Token **rest, Token *tok, Type *ty);
 static Node *mul(Token **rest, Token *tok);
 static Node *primary(Token **rest, Token *tok);
 static Node *unary(Token **rest, Token *tok);
@@ -80,6 +82,7 @@ static Node *new_num(int val) {
 
 // compound-stmt = (declaration | stmt)* "}"
 static Node *compound_stmt(Token **rest, Token *tok) {
+	Node *node = new_node(ND_BLOCK);
 	Node head = {};
 	Node *cur = &head;
 	enter_scope();
@@ -92,7 +95,6 @@ static Node *compound_stmt(Token **rest, Token *tok) {
 		add_type(cur);
 	}
 
-	Node *node = new_node(ND_BLOCK);
 	node -> body = head.next;
 	*rest = tok -> next;
 	leave_scope();
@@ -130,13 +132,27 @@ static Node *stmt(Token **rest, Token *tok) {
 }
 
 static Type *func_params(Token **rest, Token *tok, Type *ty) {
-	equal(tok, ")");
+	Type head = {};
+	Type *cur = &head;
+	
+	while (!equal(tok, ")")) {
+		if (cur != &head)
+			tok = skip(tok, ",");
+		Type *basety = declspec(&tok, tok);
+		Type *_ty = declarator(&tok, tok, basety);
+		Type *temp = calloc(1, sizeof(Type));
+		*temp = *_ty;	
+		cur = cur -> next = temp; 
+	}
 	ty = func_type(ty);
+	ty->params = head.next;
 	*rest = tok -> next;
 	return ty;
 }
 
-// type-suffix =  "(" ... ")" | "[" num "]" type-suffix
+// type-suffix = ( "(" func-params? ")")?
+// func-params = param ("," param)*
+// 				| "[" num "]" type-suffix
 static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	if (equal(tok, "(")) {
 		return func_params(rest, tok -> next, ty);
@@ -440,14 +456,22 @@ static Node *primary(Token **rest, Token *tok) {
 	error("expected an expression");
 }
 
+static void create_func_params(Type *param) {
+	if (param) {
+		create_func_params(param->next);
+		new_lvar(get_ident(param->decl), param);
+	}
+}
+
 static Token *function(Token *tok, Type *basety) {
 	enter_scope();
 
+	locals = NULL;
 	Type *ty = declarator(&tok, tok, basety);
 	Obj *fn = new_gvar(get_ident(ty -> decl), ty);
+	create_func_params(ty->params);
+	fn -> params  = locals;
 	fn -> is_function = true;
-
-	locals = NULL;
 	tok = skip(tok, "{");
 	fn -> body = compound_stmt(&tok, tok);
 	fn -> locals = locals;
