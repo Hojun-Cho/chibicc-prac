@@ -1,6 +1,7 @@
 #include "chibicc.h"
 
 static char *argreg8[] = {"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
+static char *argreg32[] = {"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
 static char *argreg64[] = {"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
 static Obj *current_fn;
 
@@ -25,7 +26,9 @@ static void load(Type *ty) {
 		return;
 	if (ty -> size == 1)
 		printf("	movsbq (%%rax), %%rax\n");
-	else
+	else if (ty -> size == 4)
+		printf("	movsxd (%%rax), %%rax\n");
+	else 
 		printf("	mov (%%rax), %%rax\n");
 }
 
@@ -33,7 +36,9 @@ static void store(Type *ty) {
 	pop_to("%rdi");
 	if (ty -> size == 1)
 		printf("	mov %%al, (%%rdi)\n");
-	else
+	else if (ty -> size == 4)
+		printf("	mov %%eax, (%%rdi)\n");
+	else 
 		printf("	mov %%rax, (%%rdi)\n");
 }
 
@@ -210,13 +215,14 @@ static void emit_text(Obj *prog) {
 		printf("	mov %%rsp, %%rbp\n");
 		printf("	sub $%d, %%rsp\n", fn->stack_size);
 
-		int i = 0,j = 0;
+		int r = 0;
 		for (Obj *var = fn -> params; var; var = var -> next)
 			if (var -> ty -> size == 1)
-				printf("	mov %s, %d(%%rbp)\n", argreg8[i++], var -> offset);
-			else
-				printf("	mov %s, %d(%%rbp)\n", argreg64[j++], var -> offset);
-
+				printf("	mov %s, %d(%%rbp)\n", argreg8[r++], var -> offset);
+			else if (var -> ty -> size == 4)
+				printf("	mov %s, %d(%%rbp)\n", argreg32[r++], var -> offset);
+			else 
+				printf("	mov %s, %d(%%rbp)\n", argreg64[r++], var -> offset);
 		// Emit code
 		gen_stmt(fn->body);
 

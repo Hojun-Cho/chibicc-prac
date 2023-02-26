@@ -134,15 +134,15 @@ static Node *stmt(Token **rest, Token *tok) {
 static Type *func_params(Token **rest, Token *tok, Type *ty) {
 	Type head = {};
 	Type *cur = &head;
-	
+	Type *_ty;	
 	while (!equal(tok, ")")) {
 		if (cur != &head)
 			tok = skip(tok, ",");
 		Type *basety = declspec(&tok, tok);
-		Type *_ty = declarator(&tok, tok, basety);
+		_ty = declarator(&tok, tok, basety);
 		Type *temp = calloc(1, sizeof(Type));
-		*temp = *_ty;	
-		cur = cur -> next = temp; 
+		*temp = *_ty;
+		cur = cur -> next = temp;
 	}
 	ty = func_type(ty);
 	ty->params = head.next;

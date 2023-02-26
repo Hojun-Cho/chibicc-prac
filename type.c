@@ -1,6 +1,6 @@
 #include "chibicc.h"
 
-Type *ty_int = &(Type){TY_INT, 8};
+Type *ty_int = &(Type){TY_INT, 4};
 Type *ty_char = &(Type){TY_CHAR, 1};
 
 Type *func_type(Type *return_ty) {
