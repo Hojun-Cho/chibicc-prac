@@ -95,6 +95,7 @@ struct Obj {
 typedef enum {
 	TY_INT,
 	TY_CHAR,
+	TY_SHORT,
 	TY_PTR,
 	TY_ARRAY,
 	TY_FUNC,
@@ -113,6 +114,7 @@ struct Type {
 
 extern Type *ty_int;
 extern Type *ty_char;
+extern Type *ty_short;
 
 void error(char *fmt, ...);
 bool startwith(char *p, char *q);

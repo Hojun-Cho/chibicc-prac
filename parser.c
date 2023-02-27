@@ -88,7 +88,7 @@ static Node *compound_stmt(Token **rest, Token *tok) {
 	enter_scope();
 	// stmt type is result of stmt
 	while (!equal(tok, "}")) {
-		if (equal(tok, "int") || equal(tok, "char"))
+		if (equal(tok, "int") || equal(tok, "char") || equal(tok, "short"))
 			cur = cur -> next = declaration(&tok, tok);
 		else
 			cur = cur -> next = stmt(&tok, tok);
@@ -167,11 +167,15 @@ static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	return ty;
 }
 
-// declspec = "int"
+// declspec = "int" | "short" | "char"
 static Type *declspec(Token **rest, Token *tok) {
 	if (equal(tok, "char")) {
 		*rest = tok -> next;
 		return ty_char;
+	}
+	else if (equal(tok, "short")) {
+		*rest = tok -> next;
+		return ty_short;
 	}
 	*rest = skip(tok, "int");
 	return ty_int;

@@ -2,6 +2,7 @@
 
 Type *ty_int = &(Type){TY_INT, 4};
 Type *ty_char = &(Type){TY_CHAR, 1};
+Type *ty_short = &(Type){TY_SHORT, 2};
 
 Type *func_type(Type *return_ty) {
 	Type *ty = calloc(1, sizeof(Type));
@@ -28,7 +29,8 @@ Type *array_of(Type *base, int len) {
 }
 
 bool is_integer(Type *ty) {
-	return ty -> kind == TY_INT || ty -> kind == TY_CHAR;
+	return ty -> kind == TY_INT || ty -> kind == TY_CHAR 
+		|| ty -> kind == TY_SHORT;
 }
 
 void add_type(Node *node) {
