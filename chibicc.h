@@ -123,6 +123,7 @@ Token *skip(Token *tok, char *s);
 bool consume_if_same(Token **rest, Token *tok, char *str);
 char *get_ident(Token *tok);
 int get_number(Token *tok);
+bool is_type(Token *tok);
 
 // 
 // scope
@@ -140,4 +141,4 @@ void add_type(Node *node);
 Type *func_type(Type *return_ty);
 Type *pointer_to(Type *base); 
 Type *array_of(Type *bse, int size);
-Type *is_type_ret_null(Token *tok);
+Type *get_type_can_null(Token *tok);

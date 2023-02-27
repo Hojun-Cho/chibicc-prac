@@ -86,9 +86,9 @@ static Node *compound_stmt(Token **rest, Token *tok) {
 	Node head = {};
 	Node *cur = &head;
 	enter_scope();
-	// stmt type is result of stmt
+
 	while (!equal(tok, "}")) {
-		if (equal(tok, "int") || equal(tok, "char") || equal(tok, "short"))
+		if (is_type(tok))
 			cur = cur -> next = declaration(&tok, tok);
 		else
 			cur = cur -> next = stmt(&tok, tok);
@@ -460,7 +460,7 @@ static Node *primary(Token **rest, Token *tok) {
 	}
 
 	if (tok -> kind == TK_KEYWORD) {
-		Type *ty = is_type_ret_null(tok);
+		Type *ty = get_type_can_null(tok);
 		if (ty == NULL)
 			error ("expected keyword");
 		node = new_num(ty -> size);

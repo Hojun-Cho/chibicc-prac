@@ -45,3 +45,7 @@ int get_number(Token *tok) {
 		error("expected a number: get_number");
 	return tok->val;
 }
+
+bool is_type(Token *tok) {
+	return equal(tok, "int") || equal(tok, "char") || equal(tok, "short");
+}
