@@ -140,3 +140,4 @@ void add_type(Node *node);
 Type *func_type(Type *return_ty);
 Type *pointer_to(Type *base); 
 Type *array_of(Type *bse, int size);
+Type *is_type_ret_null(Token *tok);

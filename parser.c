@@ -134,7 +134,7 @@ static Node *stmt(Token **rest, Token *tok) {
 static Type *func_params(Token **rest, Token *tok, Type *ty) {
 	Type head = {};
 	Type *cur = &head;
-	Type *_ty;	
+	Type *_ty;
 	while (!equal(tok, ")")) {
 		if (cur != &head)
 			tok = skip(tok, ",");
@@ -152,7 +152,7 @@ static Type *func_params(Token **rest, Token *tok, Type *ty) {
 
 // type-suffix = ( "(" func-params? ")")?
 // func-params = param ("," param)*
-// 				| "[" num "]" type-suffix
+//				| "[" num "]" type-suffix
 static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	if (equal(tok, "(")) {
 		return func_params(rest, tok -> next, ty);
@@ -434,7 +434,8 @@ static Node *primary(Token **rest, Token *tok) {
 
 	if (equal(tok, "sizeof")) {
 		node = unary(rest, tok -> next);
-		add_type(node);
+		if (node -> ty == NULL)
+			add_type(node);
 		return new_num(node -> ty -> size);
 	}
 
@@ -454,6 +455,16 @@ static Node *primary(Token **rest, Token *tok) {
 	}
 	if (tok -> kind == TK_NUM || tok -> kind == TK_CHAR) {
 		node = new_num(tok -> val);
+		*rest = tok -> next;
+		return node;
+	}
+
+	if (tok -> kind == TK_KEYWORD) {
+		Type *ty = is_type_ret_null(tok);
+		if (ty == NULL)
+			error ("expected keyword");
+		node = new_num(ty -> size);
+		node -> ty = ty;
 		*rest = tok -> next;
 		return node;
 	}

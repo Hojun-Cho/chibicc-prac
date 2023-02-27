@@ -4,6 +4,16 @@ Type *ty_int = &(Type){TY_INT, 4};
 Type *ty_char = &(Type){TY_CHAR, 1};
 Type *ty_short = &(Type){TY_SHORT, 2};
 
+Type *is_type_ret_null(Token *tok) {
+	if (equal(tok, "int")) 
+		return ty_int;
+	if (equal(tok, "char"))
+		return ty_char;
+	if (equal(tok, "short"))
+		return ty_short;
+	return NULL;
+}
+
 Type *func_type(Type *return_ty) {
 	Type *ty = calloc(1, sizeof(Type));
 	ty -> kind = TY_FUNC;
