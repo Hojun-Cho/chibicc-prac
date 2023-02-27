@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef enum {
 	TK_IDENT,
@@ -22,7 +23,7 @@ typedef struct Type Type;
 struct Token{
 	Tokenkind kind;
 	Token *next;
-	int val;
+	int64_t val;
 	char *loc;
 	int len;
 
@@ -64,7 +65,7 @@ struct Node {
 	Node *lhs;	// Left-hand side
 	Node *rhs;	// Right-hand side
 	Obj *var;
-	int val;	// Used if kind == ND_NUM || CHAR
+	int64_t val;	// Used if kind == ND_NUM || CHAR
 	
 	// "if stmt
 	Node *cond;
@@ -96,6 +97,7 @@ typedef enum {
 	TY_INT,
 	TY_CHAR,
 	TY_SHORT,
+	TY_LONG,
 	TY_PTR,
 	TY_ARRAY,
 	TY_FUNC,
@@ -115,6 +117,7 @@ struct Type {
 extern Type *ty_int;
 extern Type *ty_char;
 extern Type *ty_short;
+extern Type *ty_long;
 
 void error(char *fmt, ...);
 bool startwith(char *p, char *q);

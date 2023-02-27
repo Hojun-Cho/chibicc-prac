@@ -156,5 +156,8 @@ assert 2 'int main() { short x; return sizeof(x);}'
 assert 4 'int main() { return sizeof(int);}'
 assert 1 'int main() {return sizeof(char);}'
 assert 1 'int main() {return sizeof((char));}'
+assert 8 'int main() {return sizeof(long);}'
+assert 8 'int main() {long x; return sizeof(x);}'
+assert 10 'int main() {long x=1; long y=9; return x+y;}'
 echo OK
 

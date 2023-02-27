@@ -3,6 +3,7 @@
 Type *ty_int = &(Type){TY_INT, 4};
 Type *ty_char = &(Type){TY_CHAR, 1};
 Type *ty_short = &(Type){TY_SHORT, 2};
+Type *ty_long = &(Type){TY_LONG, 8};
 
 Type *get_type_can_null(Token *tok) {
 	if (equal(tok, "int")) 
@@ -11,6 +12,8 @@ Type *get_type_can_null(Token *tok) {
 		return ty_char;
 	if (equal(tok, "short"))
 		return ty_short;
+	if (equal(tok, "long"))
+		return ty_long;
 	return NULL;
 }
 
@@ -40,7 +43,7 @@ Type *array_of(Type *base, int len) {
 
 bool is_integer(Type *ty) {
 	return ty -> kind == TY_INT || ty -> kind == TY_CHAR 
-		|| ty -> kind == TY_SHORT;
+		|| ty -> kind == TY_SHORT || ty -> kind == TY_LONG;
 }
 
 void add_type(Node *node) {

@@ -74,7 +74,7 @@ static Node *new_unary(Nodekind kind, Node *expr) {
 	return node;
 }
 
-static Node *new_num(int val) {
+static Node *new_num(int64_t val) {
 	Node *node = new_node(ND_NUM);
 	node -> val = val;
 	return node;
@@ -167,18 +167,23 @@ static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	return ty;
 }
 
-// declspec = "int" | "short" | "char"
+// declspec = "int" | "short" | "char" | "long"
 static Type *declspec(Token **rest, Token *tok) {
-	if (equal(tok, "char")) {
-		*rest = tok -> next;
-		return ty_char;
-	}
-	else if (equal(tok, "short")) {
-		*rest = tok -> next;
-		return ty_short;
-	}
-	*rest = skip(tok, "int");
-	return ty_int;
+	Type *ty = NULL;
+
+	if (equal(tok, "char"))
+		ty = ty_char;
+	else if (equal(tok, "short"))
+		ty = ty_short;
+	else if (equal(tok, "long"))
+		ty = ty_long;
+	else if (equal(tok, "int"))
+		ty = ty_int;
+
+	if (rest == NULL)
+		error("expected decl");
+	*rest = tok -> next;
+	return ty;
 }
 
 // declarator = "*"* ident type-suffix

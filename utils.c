@@ -47,5 +47,6 @@ int get_number(Token *tok) {
 }
 
 bool is_type(Token *tok) {
-	return equal(tok, "int") || equal(tok, "char") || equal(tok, "short");
+	return equal(tok, "int") || equal(tok, "char") || equal(tok, "short")
+		|| equal(tok, "long");
 }
