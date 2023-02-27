@@ -167,7 +167,7 @@ static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	return ty;
 }
 
-// declspec = "int" | "short" | "char" | "long"
+// declspec = "int" | "short" | "char" | "long" | "void"
 static Type *declspec(Token **rest, Token *tok) {
 	Type *ty = NULL;
 
@@ -179,7 +179,8 @@ static Type *declspec(Token **rest, Token *tok) {
 		ty = ty_long;
 	else if (equal(tok, "int"))
 		ty = ty_int;
-
+	else if (equal(tok, "void"))
+		ty = ty_void;
 	if (rest == NULL)
 		error("expected decl");
 	*rest = tok -> next;
@@ -211,6 +212,8 @@ static Node *declaration(Token **rest, Token *tok) {
 		if (i++ > 0)
 			tok = skip(tok, ",");
 		Type *ty = declarator(&tok, tok, basety);
+		if (ty -> kind == TY_VOID)
+			error("variable declared void");
 		Obj *var = new_lvar(get_ident(ty -> decl), ty);
 
 		if (!equal(tok, "="))

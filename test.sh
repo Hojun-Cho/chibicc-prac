@@ -159,5 +159,8 @@ assert 1 'int main() {return sizeof((char));}'
 assert 8 'int main() {return sizeof(long);}'
 assert 8 'int main() {long x; return sizeof(x);}'
 assert 10 'int main() {long x=1; long y=9; return x+y;}'
+
+assert 100 'long temp() {return 100;} int main() {int x = temp(); return x;}'
+assert 0 'int main() { void *x; return 0;}'
 echo OK
 

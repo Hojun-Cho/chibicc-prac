@@ -4,6 +4,7 @@ Type *ty_int = &(Type){TY_INT, 4};
 Type *ty_char = &(Type){TY_CHAR, 1};
 Type *ty_short = &(Type){TY_SHORT, 2};
 Type *ty_long = &(Type){TY_LONG, 8};
+Type *ty_void = &(Type){TY_VOID, 1};
 
 Type *get_type_can_null(Token *tok) {
 	if (equal(tok, "int")) 
@@ -14,6 +15,8 @@ Type *get_type_can_null(Token *tok) {
 		return ty_short;
 	if (equal(tok, "long"))
 		return ty_long;
+	if (equal(tok, "void"))
+		return ty_void;
 	return NULL;
 }
 
@@ -88,6 +91,8 @@ void add_type(Node *node) {
 		case ND_DEREF:
 			if (node->lhs->ty->base == NULL)
 				error("invalid pointer in type.c:53");
+			if (node -> lhs -> ty -> base -> kind == TY_VOID)
+				error("dereferencing a void pointer");
 			node -> ty = node -> lhs -> ty -> base;
 			return;
 	}

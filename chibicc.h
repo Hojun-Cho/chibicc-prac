@@ -98,6 +98,7 @@ typedef enum {
 	TY_CHAR,
 	TY_SHORT,
 	TY_LONG,
+	TY_VOID,
 	TY_PTR,
 	TY_ARRAY,
 	TY_FUNC,
@@ -118,6 +119,7 @@ extern Type *ty_int;
 extern Type *ty_char;
 extern Type *ty_short;
 extern Type *ty_long;
+extern Type *ty_void;
 
 void error(char *fmt, ...);
 bool startwith(char *p, char *q);
