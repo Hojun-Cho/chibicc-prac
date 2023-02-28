@@ -1,19 +1,19 @@
 #!/bin/bash
 assert() {
-  expected="$1"
-  input="$2"
+	expected="$1"
+	input="$2"
 
-  ./chibicc "$input" > tmp.s || exit
-  gcc -static -o tmp tmp.s test.s
-  ./tmp
-  actual="$?"
+	./chibicc "$input" > tmp.s || exit
+	gcc -static -o tmp tmp.s test.s
+	./tmp
+	actual="$?"
 
-  if [ "$actual" = "$expected" ]; then
-    echo "$input => $actual"
-  else
-    echo "$input => $expected expected, but got $actual"
-    exit 1
-  fi
+	if [ "$actual" = "$expected" ]; then
+		echo "$input => $actual"
+	else
+		echo "$input => $expected expected, but got $actual"
+		exit 1
+	fi
 }
 assert 0 'int main() { return 0; }'
 assert 42 'int main() { return 42; }'
@@ -105,7 +105,7 @@ assert 24 'int main() { int x[2][3]; return sizeof(x);}'
 aasert 8 'int main() {int *x; return sizeof(x)}'
 assert 0 'int ret_1() {return 1;} int ret_2() {return 2;} int main() {return 0;}'
 
-assert 2 'int main() { int x=1; {int x=2; {int x= 3;} return x;}}' 
+assert 2 'int main() { int x=1; {int x=2; {int x= 3;} return x;}}'
 assert 1 'int x,y,z;int main(){x = 0; y=1;z=2; return y;}'
 
 assert 0 'int x; int main() { return x; }'
@@ -162,5 +162,9 @@ assert 10 'int main() {long x=1; long y=9; return x+y;}'
 
 assert 100 'long temp() {return 100;} int main() {int x = temp(); return x;}'
 assert 0 'int main() { void *x; return 0;}'
+
+assert 4 'int main (){ struct {int a;} x; sizeof(x); }'
+assert 5 'int main (){ struct {int a;char b;} x; sizeof(x); }'
+assert 10 'int main(){struct {int a;char b; int c;} x; x.c = 10; return x.c;}'
 echo OK
 

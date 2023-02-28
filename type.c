@@ -7,7 +7,7 @@ Type *ty_long = &(Type){TY_LONG, 8};
 Type *ty_void = &(Type){TY_VOID, 1};
 
 Type *get_type_can_null(Token *tok) {
-	if (equal(tok, "int")) 
+	if (equal(tok, "int"))
 		return ty_int;
 	if (equal(tok, "char"))
 		return ty_char;
@@ -45,7 +45,7 @@ Type *array_of(Type *base, int len) {
 }
 
 bool is_integer(Type *ty) {
-	return ty -> kind == TY_INT || ty -> kind == TY_CHAR 
+	return ty -> kind == TY_INT || ty -> kind == TY_CHAR
 		|| ty -> kind == TY_SHORT || ty -> kind == TY_LONG;
 }
 
@@ -75,17 +75,20 @@ void add_type(Node *node) {
 		case ND_NE:
 		case ND_LT:
 		case ND_LE:
-		case ND_NUM: 
+		case ND_NUM:
 		case ND_FUNCALL:
 			node -> ty = ty_int;
 			return;
 		case ND_VAR:
 			node -> ty = node -> var -> ty;
 			return;
+		case ND_MEMBER:
+			node -> ty = node -> member -> ty;
+			return;
 		case ND_ADDR:
 			if (node -> lhs -> ty -> kind == TY_ARRAY)
 				node->ty = pointer_to(node->lhs->ty->base);
-			else 
+			else
 				node->ty = pointer_to(node->lhs->ty);
 			return;
 		case ND_DEREF:
