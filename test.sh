@@ -172,5 +172,6 @@ assert 1 'int main() {struct temp{int a; char b; int c;}; struct temp x; x.b = 1
 assert 1 'int main() {struct temp{int a; char b; int c;}; struct temp x[2]; x[1].b = 1; return x[1].b;}'
 
 assert 3 'int main(){ struct {int a; int b;} x,y; x.a=3; y=x; return y.a;}'
+
 echo OK
 

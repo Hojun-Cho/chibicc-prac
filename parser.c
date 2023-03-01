@@ -198,11 +198,15 @@ static void struct_fields(Token **rest, Token *tok, Type *ty) {
 
 	while (!equal(tok, "}")) {
 		Type *basety = declspec(&tok, tok);
-		Field *field = calloc(1, sizeof(Field));
-		field -> ty = declarator(&tok, tok, basety);
-		field -> decl = field -> ty -> decl;
-		cur = cur -> next = field;
-		tok = skip(tok, ";");
+		int i = 0;
+		while (consume_if_same(&tok, tok, ";") == false) {
+			if (i++ != 0)
+				tok = skip(tok, ",");
+			Field *field = calloc(1, sizeof(Field));
+			field -> ty = declarator(&tok, tok, basety);
+			field -> decl = field -> ty -> decl;
+			cur = cur -> next = field;
+		}
 	}
 	*rest = tok -> next;
 	ty -> fields = head.next;
