@@ -152,6 +152,8 @@ Obj *find_var(Token *tok);
 void enter_scope(void);
 void leave_scope(void);
 Obj *new_var(char *name, Type *ty);
+Type *find_tag(Token *tok);
+void push_tag_scope(Token *tok, Type *ty);
 
 Token *tokenize(char *p);
 Obj *parse(Token *tok);

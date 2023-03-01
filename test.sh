@@ -166,5 +166,10 @@ assert 0 'int main() { void *x; return 0;}'
 assert 4 'int main (){ struct {int a;} x; sizeof(x); }'
 assert 5 'int main (){ struct {int a;char b;} x; sizeof(x); }'
 assert 10 'int main(){struct {int a;char b; int c;} x; x.c = 10; return x.c;}'
+
+assert 1 'int main() {struct temp{int a; int b;}; struct temp x; x.a = 1;return x.a;}'
+assert 1 'int main() {struct temp{int a; char b; int c;}; struct temp x; x.b = 1;return x.b;}'
+assert 1 'int main() {struct temp{int a; char b; int c;}; struct temp x[2]; x[1].b = 1; return x[1].b;}'
+
 echo OK
 

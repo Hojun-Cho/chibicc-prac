@@ -1,5 +1,14 @@
 #include "chibicc.h"
 
+// for struct tags
+typedef struct TagScope TagScope;
+struct TagScope {
+	TagScope *next;
+	char *name;
+	Type *ty;
+};
+
+
 typedef struct VarScope VarScope;
 struct VarScope {
 	VarScope *next;
@@ -10,6 +19,7 @@ typedef struct Scope Scope;
 struct Scope {
 	Scope *next;
 	VarScope *vars;
+	TagScope *tags;
 };
 
 static Scope *scope = &(Scope){};
@@ -46,4 +56,20 @@ Obj *new_var(char *name, Type *ty) {
 	var -> ty = ty;
 	push_var_to_scope(var);	// push to current scope;
 	return var;
+}
+
+Type *find_tag(Token *tok) {
+	for (Scope *sc = scope; sc; sc = sc->next)
+		for (TagScope *tsc = sc->tags; tsc; tsc = tsc->next)
+			if (equal(tok, tsc->name))
+				return tsc->ty;
+	return NULL;
+}
+
+void push_tag_scope(Token *tok, Type *ty) {
+	TagScope *sc = calloc(1, sizeof(TagScope));
+	sc->name = strndup(tok->loc, tok->len);
+	sc->ty = ty;
+	sc->next = scope->tags;
+	scope->tags = sc;
 }

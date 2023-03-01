@@ -208,10 +208,28 @@ static void struct_fields(Token **rest, Token *tok, Type *ty) {
 	ty -> fields = head.next;
 }
 
-// struct-decl = "{" struct members
-static Type *struct_decl(Token **rest, Token *tok) {
-	tok = skip(tok, "{");
+bool is_variable_decl(Token *tok, Token *tag) {
+	return tag && equal(tok, "{") == false;
+}
 
+// struct-decl = ident? "{" struct fields
+static Type *struct_decl(Token **rest, Token *tok) {
+	Token *tag = NULL;
+
+	if (tok->kind == TK_IDENT) {
+		tag = tok;
+		tok = tok->next;
+	}
+
+	// if var
+	if (is_variable_decl(tok, tag) == true) {
+		Type *ty = find_tag(tag);
+		if (ty == NULL)
+			error("unknown struct type");
+		*rest = tok;
+		return ty;
+	}
+	tok = skip(tok, "{");
 	Type *ty = calloc(1, sizeof(Type));
 	ty->kind = TY_STRUCT;
 	struct_fields(rest, tok, ty);
@@ -222,6 +240,8 @@ static Type *struct_decl(Token **rest, Token *tok) {
 		offset += field->ty->size;
 	}
 	ty->size = offset;
+	if (tag)
+		push_tag_scope(tag, ty);
 	return ty;
 }
 
