@@ -82,8 +82,8 @@ void add_type(Node *node) {
 		case ND_VAR:
 			node -> ty = node -> var -> ty;
 			return;
-		case ND_MEMBER:
-			node -> ty = node -> member -> ty;
+		case ND_FIELD:
+			node -> ty = node -> field -> ty;
 			return;
 		case ND_ADDR:
 			if (node -> lhs -> ty -> kind == TY_ARRAY)

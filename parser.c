@@ -192,20 +192,20 @@ static Type *declspec(Token **rest, Token *tok) {
 }
 
 // struct-members = (declspec declarator ";")*
-static void struct_members(Token **rest, Token *tok, Type *ty) {
-	Member head = {};
-	Member *cur = &head;
+static void struct_fields(Token **rest, Token *tok, Type *ty) {
+	Field head = {};
+	Field *cur = &head;
 
 	while (!equal(tok, "}")) {
 		Type *basety = declspec(&tok, tok);
-		Member *mem = calloc(1, sizeof(Member));
-		mem -> ty = declarator(&tok, tok, basety);
-		mem -> decl = mem -> ty -> decl;
-		cur = cur -> next = mem;
+		Field *field = calloc(1, sizeof(Field));
+		field -> ty = declarator(&tok, tok, basety);
+		field -> decl = field -> ty -> decl;
+		cur = cur -> next = field;
 		tok = skip(tok, ";");
 	}
 	*rest = tok -> next;
-	ty -> members = head.next;
+	ty -> fields = head.next;
 }
 
 // struct-decl = "{" struct members
@@ -214,22 +214,22 @@ static Type *struct_decl(Token **rest, Token *tok) {
 
 	Type *ty = calloc(1, sizeof(Type));
 	ty->kind = TY_STRUCT;
-	struct_members(rest, tok, ty);
+	struct_fields(rest, tok, ty);
 
 	int offset = 0;
-	for (Member *mem = ty->members; mem; mem = mem->next) {
-		mem->offset = offset;
-		offset += mem->ty->size;
+	for (Field *field = ty->fields; field; field = field->next) {
+		field->offset = offset;
+		offset += field->ty->size;
 	}
 	ty->size = offset;
 	return ty;
 }
 
-static Member *get_struct_member(Type *ty, Token *tok) {
-	for (Member *mem = ty -> members; mem; mem = mem->next) {
-		if (mem -> decl -> len == tok -> len &&
-				!strncmp(mem -> decl ->loc, tok -> loc, tok -> len))
-			return mem;
+static Field *get_struct_filed(Type *ty, Token *tok) {
+	for (Field *field = ty -> fields; field; field = field->next) {
+		if (field -> decl -> len == tok -> len &&
+				!strncmp(field -> decl ->loc, tok -> loc, tok -> len))
+			return field;
 	}
 	error("no such member");
 }
@@ -239,8 +239,8 @@ static Node *struct_ref(Node *node, Token *tok) {
 	if (node -> ty -> kind != TY_STRUCT)
 		error("not a struct");
 
-	Node *new_node = new_unary(ND_MEMBER, node);
-	new_node->member = get_struct_member(node->ty, tok);
+	Node *new_node = new_unary(ND_FIELD, node);
+	new_node->field = get_struct_filed(node->ty, tok);
 	return new_node;
 }
 
@@ -248,7 +248,7 @@ static Node *struct_ref(Node *node, Token *tok) {
 static Type *declarator(Token **rest, Token *tok, Type *ty) {
 	while (consume_if_same(&tok, tok, "*") == true) // eg. int ****x
 		ty = pointer_to(ty);
-	
+
 	if (tok -> kind != TK_IDENT)
 		error("declarator: expected ident");
 

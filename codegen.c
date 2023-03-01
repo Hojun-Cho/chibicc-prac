@@ -57,9 +57,9 @@ static void gen_addr(Node *node) {
 	}
 	else if (node -> kind == ND_DEREF)
 		gen_expr(node -> lhs);
-	else if (node -> kind == ND_MEMBER) {
+	else if (node -> kind == ND_FIELD) {
 		gen_addr(node -> lhs);
-		printf("	add $%d, %%rax\n", node -> member -> offset);
+		printf("	add $%d, %%rax\n", node -> field -> offset);
 	}
 	return;
 }
@@ -90,7 +90,7 @@ static void gen_expr(Node *node) {
 			gen_expr(node -> rhs);
 			store(node -> ty);
 			return;
-		case ND_MEMBER:
+		case ND_FIELD:
 			gen_addr(node);
 			load(node -> ty);
 			return;

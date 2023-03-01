@@ -20,7 +20,7 @@ typedef enum {
 
 typedef struct Token Token;
 typedef struct Type Type;
-typedef struct Member Member;
+typedef struct Field Field;
 
 struct Token{
 	Tokenkind kind;
@@ -46,7 +46,7 @@ typedef enum {
 	ND_VAR,
 	ND_ASSIGN,
 	ND_NUM, // Integer
-	ND_MEMBER,
+	ND_FIELD,
 	ND_EXPR_STMT,
 	ND_BLOCK, // {}
 	ND_RETURN,
@@ -78,7 +78,8 @@ struct Node {
 	char *funcname;
 	Node *args;
 
-	Member *member;
+	// struct
+	Field *field;
 };
 
 struct Obj {
@@ -116,14 +117,14 @@ struct Type {
 	Type *base;
 	Token *decl;
 	int array_len;
-	Member *members;
+	Field *fields;
 	Type *return_ty;
 	Type *params;
 	Type *next;
 };
 
-struct Member {
-	Member *next;
+struct Field {
+	Field *next;
 	Type *ty;
 	Token *decl;
 	int offset;
