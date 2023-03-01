@@ -22,8 +22,9 @@ static void pop_to(char *arg) {
 	printf("	pop %s\n", arg);
 }
 
-static void load(Type *ty) {
-	if (ty -> kind == TY_ARRAY)
+// load_value value 
+static void load_value(Type *ty) {
+	if (ty -> kind == TY_ARRAY || ty -> kind == TY_STRUCT)
 		return;
 	if (ty -> size == 1)
 		printf("	movsbq (%%rax), %%rax\n");
@@ -31,19 +32,30 @@ static void load(Type *ty) {
 		printf("	movswq (%%rax), %%rax\n");
 	else if (ty -> size == 4)
 		printf("	movsxd (%%rax), %%rax\n");
-	else 
+	else
 		printf("	mov (%%rax), %%rax\n");
 }
 
 static void store(Type *ty) {
 	pop_to("%rdi");
+
+	// shallow copy
+	if (ty->kind == TY_STRUCT) {
+		// rdi is node->lhs addr
+		// copy all bytes 
+		for (int i = 0;i < ty -> size; i++) {
+			printf("	mov %d(%%rax), %%r8b\n", i);
+			printf("	mov %%r8b, %d(%%rdi)\n", i);
+		}
+		return;
+	}
 	if (ty -> size == 1)
 		printf("	mov %%al, (%%rdi)\n");
 	else if (ty -> size == 2)
 		printf("	mov %%ax, (%%rdi)\n");
 	else if (ty -> size == 4)
 		printf("	mov %%eax, (%%rdi)\n");
-	else 
+	else
 		printf("	mov %%rax, (%%rdi)\n");
 }
 
@@ -75,14 +87,14 @@ static void gen_expr(Node *node) {
 			return;
 		case ND_VAR:
 			gen_addr(node);
-			load(node->ty);
+			load_value(node->ty);
 			return;
 		case ND_ADDR:
 			gen_addr(node -> lhs);
 			return;
 		case ND_DEREF:
 			gen_expr(node -> lhs);
-			load(node->ty);
+			load_value(node->ty);
 			return;
 		case ND_ASSIGN:
 			gen_addr(node -> lhs);
@@ -92,7 +104,7 @@ static void gen_expr(Node *node) {
 			return;
 		case ND_FIELD:
 			gen_addr(node);
-			load(node -> ty);
+			load_value(node -> ty);
 			return;
 		case ND_FUNCALL: {
 							 int argc = 0;
@@ -236,7 +248,7 @@ static void emit_text(Obj *prog) {
 				printf("	mov %s, %d(%%rbp)\n", argreg16[r++], var -> offset);
 			else if (var -> ty -> size == 4)
 				printf("	mov %s, %d(%%rbp)\n", argreg32[r++], var -> offset);
-			else 
+			else
 				printf("	mov %s, %d(%%rbp)\n", argreg64[r++], var -> offset);
 		// Emit code
 		gen_stmt(fn->body);
