@@ -268,10 +268,20 @@ static Node *struct_ref(Node *node, Token *tok) {
 	return new_node;
 }
 
-// declarator = "*"* ident type-suffix
+// declarator = "*"*  ( "(" ident ")" | "(" declarator ")" | ident ) type-suffix
 static Type *declarator(Token **rest, Token *tok, Type *ty) {
 	while (consume_if_same(&tok, tok, "*") == true) // eg. int ****x
 		ty = pointer_to(ty);
+
+	// char (*x)[3];
+	if (equal(tok, "(")) {
+		Token *start = tok; // start is "("
+		Type dummy = {};
+		declarator(&tok, tok->next, &dummy); // tok -> next is "*y)[3];
+		tok = skip(tok, ")");
+		ty = type_suffix(rest, tok, ty);
+		return declarator(&tok, start -> next, ty); // return TY_PTR 
+	}
 
 	if (tok -> kind != TK_IDENT)
 		error("declarator: expected ident");
