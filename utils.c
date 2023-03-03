@@ -1,13 +1,5 @@
 #include "chibicc.h"
 
-void error(char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "\n");
-	exit(1);
-}
-
 bool startwith(char *p, char *q) {
 	return strncmp(p, q, strlen(q)) == 0;
 }
@@ -19,7 +11,7 @@ bool equal(Token *tok, char *op) {
 
 Token *skip(Token *tok, char *s) {
   if (!equal(tok, s)) {
-    fprintf(stderr, "expected '%s'\n", s);
+	  error_tok(tok, "expected token string '%s', actual '%s'", s, tok->loc);
   	exit(1);
   }
   return tok->next;
@@ -36,13 +28,13 @@ bool consume_if_same(Token **rest, Token *tok, char *str) {
 
 char *get_ident(Token *tok) {
 	if (tok -> kind != TK_IDENT)
-		error("get_ident: expected identifier");
+		error_tok(tok, "expected token kind %d, actual %d", TK_IDENT, tok->kind);
 	return strndup(tok -> loc, tok -> len);
 }
 
 int get_number(Token *tok) {
 	if (tok->kind != TK_NUM)
-		error("expected a number: get_number");
+		error_tok(tok, "expected token kind %d, actual %d", TK_NUM, tok->kind);
 	return tok->val;
 }
 

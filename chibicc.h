@@ -26,11 +26,13 @@ struct Token{
 	Tokenkind kind;
 	Token *next;
 	int64_t val;
-	char *loc;
 	int len;
-
 	Type *ty;
 	char *str;
+	
+	// for error
+	int line_no;
+	char *loc;
 };
 
 typedef enum {
@@ -135,8 +137,11 @@ extern Type *ty_char;
 extern Type *ty_short;
 extern Type *ty_long;
 extern Type *ty_void;
-
+void set_current_input(char *p);
 void error(char *fmt, ...);
+void error_at(char *loc, char *fmt, ...);
+void error_tok(Token *tok, char *fmt, ...);
+
 bool startwith(char *p, char *q);
 bool equal(Token *tok, char *op);
 Token *skip(Token *tok, char *s);

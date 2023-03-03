@@ -17,15 +17,15 @@ static int read_punct(char *p) {
 
 static int get_numer_from_tok(Token *tok) {
 	if (tok -> kind != TK_NUM)
-		error("expected a number");
+		error_tok(tok, "expected token kind TK_NUM, actual %d", tok -> kind);
 	return tok -> val;
 }
 
 static Token *new_token(Tokenkind kind, char *start, char *end) {
 	Token *tok = calloc(1, sizeof(Token));
-	tok -> kind = kind;
-	tok -> loc = start;
-	tok -> len = end - start;
+	tok->kind = kind;
+	tok->loc = start;
+	tok->len = end - start;
 	return tok;
 }
 
@@ -49,7 +49,7 @@ static void convert_if_keyword(Token *tok) {
 static Token *read_char(char *start) {
 	char *p = start + 1;
 	char res;
-	
+
 	if (*p == '\\' && *(p + 1) != '\'') { // '\n' || '\0'
 		p++;
 		switch (*p) {
@@ -60,13 +60,13 @@ static Token *read_char(char *start) {
 				res = '\0';
 				break;
 			default :
-				error ("unkown char");
+				error_at(p, "unkown char");
 		}
 	}
-	else 
+	else
 		res = *p;
 	if (*(++p) != '\'')
-		error ("unclosed char");
+		error_at(p, "unclosed char");
 	Token *tok = new_token(TK_CHAR, start, p + 1);
 	tok -> val = res;
 	return tok;
@@ -77,7 +77,7 @@ static Token *read_string_literal(char *start) {
 	char *p = start + 1;
 	for (; *p != '"'; p++)
 		if (*p == '\0')
-			error("unclosed string");
+			error_at(p, "unclosed string");
 
 	Token *tok = new_token(TK_STR, start, p + 1);
 	tok -> ty = array_of(ty_char, p - start);
@@ -85,10 +85,26 @@ static Token *read_string_literal(char *start) {
 	return tok;
 }
 
+static void add_line_numbers(Token *tok, char *p) {
+	int n = 1;
+	while (*p) {
+		if (p == tok -> loc) {
+			tok->line_no = n;
+			tok = tok->next;
+		}
+		if (*p == '\n')
+			n++;
+		p++;
+	};
+	// eof token
+	tok->line_no = n;
+}
+
 Token *tokenize(char *p) {
+	char *_p = p;
+	set_current_input(p);
 	Token head = {};
 	Token *cur = &head;
-	char *start;
 	int punct_len;
 
 	while (*p) {
@@ -107,7 +123,7 @@ Token *tokenize(char *p) {
 			continue;
 		}
 		if (is_ident1(*p)) {
-			start = p;
+			char *start = p;
 			while (is_ident2(*p))
 				p++;
 			cur = cur -> next = new_token(TK_IDENT, start, p);
@@ -116,7 +132,7 @@ Token *tokenize(char *p) {
 
 		if (isdigit(*p)) {
 			cur = cur -> next = new_token(TK_NUM, p, p);
-			start = p;
+			char *start = p;
 			cur -> val = strtoul(p, &p, 10);
 			cur -> len = p - start;
 			continue;
@@ -127,12 +143,10 @@ Token *tokenize(char *p) {
 			p += punct_len;
 			continue;
 		}
-		error("invalid token");
+		error_at(p, "invalid token");
 	}
-
 	cur = cur -> next = new_token(TK_EOF, p, p);
+	add_line_numbers(head.next, _p);
 	convert_if_keyword(head.next);
 	return head.next;
 }
-
-
