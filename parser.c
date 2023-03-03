@@ -275,12 +275,12 @@ static Type *declarator(Token **rest, Token *tok, Type *ty) {
 
 	// char (*x)[3];
 	if (equal(tok, "(")) {
-		Token *start = tok; // start is "("
+		Token *start = tok;
 		Type dummy = {};
-		declarator(&tok, tok->next, &dummy); // tok -> next is "*y)[3];
+		declarator(&tok, tok->next, &dummy); // use dummy to skip token
 		tok = skip(tok, ")");
 		ty = type_suffix(rest, tok, ty);
-		return declarator(&tok, start -> next, ty); // return TY_PTR 
+		return declarator(&tok, start -> next, ty); // make real declarator => char (*x)[3];
 	}
 
 	if (tok -> kind != TK_IDENT)
@@ -303,6 +303,8 @@ static Node *declaration(Token **rest, Token *tok) {
 		if (i++ > 0)
 			tok = skip(tok, ",");
 		Type *ty = declarator(&tok, tok, basety);
+		
+		printf("%s\n",tok -> loc);
 		if (ty -> kind == TY_VOID)
 			error("variable declared void");
 		Obj *var = new_lvar(get_ident(ty -> decl), ty);
