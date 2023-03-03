@@ -66,6 +66,7 @@ struct Node {
 	Nodekind kind;	// Node kind
 	Node *body;	// {...}
 	Type *ty;
+	Token *tok; // for error
 	Node*next;
 	Node *lhs;	// Left-hand side
 	Node *rhs;	// Right-hand side

@@ -158,7 +158,7 @@ static void gen_expr(Node *node) {
 			printf("	movzb %%al, %%rax\n");
 			return;
 	}
-	error("invalid expression");
+	error_tok(node->tok, "invalid expression");
 }
 
 static void gen_stmt(Node *node) {
@@ -191,7 +191,7 @@ static void gen_stmt(Node *node) {
 		return;
 	}
 
-	error("invalid stmt");
+	error_tok(node->tok, "invalid stmt");
 }
 
 static int align_to(int n, int align) {
