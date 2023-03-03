@@ -168,26 +168,63 @@ static Type *type_suffix(Token **rest, Token *tok, Type *ty) {
 	return ty;
 }
 
-// declspec = "int" | "short" | "char" | "long" | "void"
-//			  | struct-decl
+// declspec = ("int" | "short" | "char" | "long" | "void"
+//			  | struct-decl) +
 static Type *declspec(Token **rest, Token *tok) {
+	enum {
+		VOID = 1 << 0,   // 1
+		CHAR = 1 << 2,   // 4
+		SHORT = 1 << 4,  // 16
+		INT = 1 << 6,
+		LONG = 1 << 8,
+		OTHER = 1 << 10,
+	};
 	Type *ty = NULL;
+	int counter = 0;
 
-	if (equal(tok, "char"))
-		ty = ty_char;
-	else if (equal(tok, "short"))
-		ty = ty_short;
-	else if (equal(tok, "long"))
-		ty = ty_long;
-	else if (equal(tok, "int"))
-		ty = ty_int;
-	else if (equal(tok, "void"))
-		ty = ty_void;
-	else if (equal(tok, "struct"))
-		return struct_decl(rest, tok -> next);
-	if (rest == NULL)
-		error("expected decl");
-	*rest = tok -> next;
+	while (is_type(tok)) {
+		if (equal(tok, "struct")) {
+			ty = struct_decl(&tok, tok->next);
+			counter += OTHER;
+			continue;
+		}
+		if (equal(tok, "char"))
+			counter += CHAR;
+		else if (equal(tok, "short"))
+			counter += SHORT;
+		else if (equal(tok, "long"))
+			counter += LONG;
+		else if (equal(tok, "int"))
+			counter += INT;
+		else if (equal(tok, "void"))
+			counter += VOID;
+		else 
+			error("unknown type name");
+
+		switch (counter) {
+			case VOID:
+				ty = ty_void;
+				break;
+			case INT:
+				ty = ty_int;
+				break;
+			case CHAR:
+				ty = ty_char;
+				break;
+			case SHORT:
+			case SHORT + INT: // short ; short int; int short;
+				ty = ty_short;
+				break;
+			case LONG:
+			case LONG + INT:
+				ty = ty_long;
+				break;
+			default:
+				error("invalid type");	
+		}
+		tok = tok->next;
+	}
+	*rest = tok;
 	return ty;
 }
 
@@ -303,8 +340,7 @@ static Node *declaration(Token **rest, Token *tok) {
 		if (i++ > 0)
 			tok = skip(tok, ",");
 		Type *ty = declarator(&tok, tok, basety);
-		
-		printf("%s\n",tok -> loc);
+
 		if (ty -> kind == TY_VOID)
 			error("variable declared void");
 		Obj *var = new_lvar(get_ident(ty -> decl), ty);

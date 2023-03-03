@@ -177,9 +177,13 @@ assert 24  'int main(){ char *x[3]; return sizeof(x); }'
 assert 8 'int main(){ char (*x)[3]; return sizeof(x); }'
 assert 1  'int main(){ char (x); return sizeof(x); }'
 assert 3  'int main(){ char (x)[3]; return sizeof(x); }'
-assert 12 'int main{ char (x[3])[4]; return sizeof(x); }'
+assert 12 'int main(){ char (x[3])[4]; return sizeof(x); }'
 assert 4  'int main(){ char (x[3])[4]; return sizeof(x[0]); }'
 assert 3  'int main(){ char *x[3]; char y; x[0]=&y; y=3; return x[0][0]; }'
 assert 4 'int main(){ char x[3]; char (*y)[3]=x; y[0][0]=4; return y[0][0]; }'
+
+assert 2 'int main() {short int x; return sizeof(x);}'
+assert 8 'int main() {long int x; return sizeof(x);}'
+assert 8 'int main() {int long x; return sizeof(x);}'
 echo OK
 
