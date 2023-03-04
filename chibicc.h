@@ -46,6 +46,7 @@ typedef enum {
 	ND_LT,  // <
 	ND_LE,  // <=
 	ND_VAR,
+	ND_COMMA, // ,
 	ND_ASSIGN,
 	ND_NUM, // Integer
 	ND_FIELD,

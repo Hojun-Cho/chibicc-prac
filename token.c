@@ -12,9 +12,19 @@ static bool is_ident2(char c)
 
 static int read_punct(char *p)
 {
-	if (startwith(p, "==") || startwith(p, "!=") ||
-		startwith(p, "<=") || startwith(p, ">="))
-		return 2;
+	static char *kw[] = {"==",
+						 "!=",
+						 "<=",
+						 ">=",
+						 "+=",
+						 "-=",
+						 "*=",
+						 "/="};
+	for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
+	{
+		if (startwith(p, kw[i]))
+			return strlen(kw[i]);
+	}
 	return ispunct(*p) ? 1 : 0;
 }
 
@@ -144,10 +154,7 @@ Token *tokenize(char *p)
 		}
 		if (is_ident1(*p))
 		{
-			char *start = p;        {
-            "column": 80,
-            "color": "#ff00FF"
-        },
+			char *start = p;
 			while (is_ident2(*p))
 				p++;
 			cur = cur->next = new_token(TK_IDENT, start, p);

@@ -52,6 +52,8 @@ static Node *compound_stmt(Token **rest, Token *tok);
 static Node *stmt(Token **rest, Token *tok);
 static Node *mul(Token **rest, Token *tok);
 static Node *postfix(Token **rest, Token *tok);
+static Node *new_add(Node *lhs, Node *rhs, Token *tok);
+static Node *new_sub(Node *lhs, Node *rhs, Token *tok);
 
 static Node *new_node(Nodekind kind, Token *tok)
 {
@@ -401,25 +403,84 @@ static Node *declaration(Token **rest, Token *tok)
 // expr-stmt = expr ";"
 static Node *expr_stmt(Token **rest, Token *tok)
 {
-	Node *node = new_unary(ND_EXPR_STMT, expr(&tok, tok), tok);
+	Node *node = new_node(ND_EXPR_STMT, tok);
+	node->lhs = expr(&tok, tok);
 	*rest = skip(tok, ";");
 	return node;
 }
 
-// expr = assign
+// expr = assign ("," expr)?
 static Node *expr(Token **rest, Token *tok)
 {
-	return assign(rest, tok);
+	Node *node = assign(&tok, tok);
+
+	if (equal(tok, ","))
+		return new_binary(ND_COMMA, node, expr(rest, tok->next), tok);
+
+	*rest = tok;
+	return node;
 }
 
-// assign = equality ("=" assign);
+/*
+	Convert `A op= B` to
+	`
+		tmp = &A;
+		*tmp = *tmp [op] B
+	`
+
+	Why not add directly to a?
+		1.	It's role is that of a code generator, not that of a parser.
+		2.  I think this way is easier to understand.
+*/
+static Node *to_assign(Node *binary)
+{
+	add_type(binary->lhs);
+	add_type(binary->rhs);
+	Token *tok = binary->tok;
+
+	// unnamed variable
+	Obj *var = new_lvar("", pointer_to(binary->lhs->ty));
+
+	// tmp = &A;
+	Node *expr_1 = new_binary(ND_ASSIGN,
+							  new_var_node(var, tok),
+							  new_unary(ND_ADDR, binary->lhs, tok), tok);
+
+	// *tmp = *tmp [op] B
+	Node *expr_2 = new_binary(ND_ASSIGN,
+							  new_unary(ND_DEREF, new_var_node(var, tok), tok),
+							  new_binary(binary->kind,
+										 new_unary(ND_DEREF, new_var_node(var, tok), tok),
+										 binary->rhs, tok),
+							  tok);
+
+	// COMMA operator
+	// 1. gen_expr(expr_1);
+	// 2. gen_addr(expr_2);
+	return new_binary(ND_COMMA, expr_1, expr_2, tok);
+}
+
+// assign = equality (assign-op assign)?;
+// assign-op = "=" | "+=" | "-=" | "*=" | "/="
 static Node *assign(Token **rest, Token *tok)
 {
 	Node *node = equality(&tok, tok);
 
 	if (equal(tok, "="))
-		// x = y = 2;
-		node = new_binary(ND_ASSIGN, node, assign(&tok, tok->next), tok);
+		return node = new_binary(ND_ASSIGN, node,
+								 assign(rest, tok->next), tok);
+
+	if (equal(tok, "+="))
+		return to_assign(new_add(node, assign(rest, tok->next), tok));
+	if (equal(tok, "-="))
+		return to_assign(new_sub(node, assign(rest, tok->next), tok));
+	if (equal(tok, "*="))
+		return to_assign(new_binary(ND_MUL, node,
+									assign(rest, tok->next), tok));
+	if (equal(tok, "/="))
+		return to_assign(new_binary(ND_DIV, node,
+									assign(rest, tok->next), tok));
+
 	*rest = tok;
 	return node;
 }
@@ -434,12 +495,14 @@ static Node *equality(Token **rest, Token *tok)
 		Token *start = tok;
 		if (equal(tok, "=="))
 		{
-			node = new_binary(ND_EQ, node, relational(&tok, tok->next), start);
+			node = new_binary(ND_EQ, node,
+							  relational(&tok, tok->next), start);
 			continue;
 		}
 		if (equal(tok, "!="))
 		{
-			node = new_binary(ND_NE, node, relational(&tok, tok->next), start);
+			node = new_binary(ND_NE, node,
+							  relational(&tok, tok->next), start);
 			continue;
 		}
 

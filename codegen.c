@@ -83,6 +83,11 @@ static void gen_addr(Node *node)
 		gen_addr(node->lhs);
 		printf("	add $%d, %%rax\n", node->field->offset);
 	}
+	else if(node -> kind == ND_COMMA)
+	{
+		gen_expr(node->lhs);
+		gen_addr(node->rhs); 
+	}
 	return;
 }
 
@@ -100,6 +105,10 @@ static void gen_expr(Node *node)
 	case ND_VAR:
 		gen_addr(node);
 		load_value(node->ty);
+		return;
+	case ND_COMMA:
+		gen_expr(node->lhs);
+		gen_expr(node->rhs);
 		return;
 	case ND_ADDR:
 		gen_addr(node->lhs);

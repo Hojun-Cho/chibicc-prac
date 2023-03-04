@@ -178,5 +178,11 @@ assert 8 'int main() {long int x; return sizeof(x);}'
 assert 8 'int main() {int long x; return sizeof(x);}'
 
 assert 10 'int test(); int main(){return test();} int test(){return 10;}'
+
+assert 200 'int main() { int x=100; return x+=100;}'
+assert 100 'int main() { int x=200; return x-=100;}'
+assert 100 'int main() { int x=50; return x*=2;}'
+assert 10 'int main() { int x=100; return x/=10;}'
+assert 6 'int main() {int x=1,y=2,z=3; x+=y+=z; return x;}'
 echo OK
 
