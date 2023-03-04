@@ -1,7 +1,9 @@
 #include "chibicc.h"
 
-int main(int argc, char **argv) {
-	if (argc != 2) {
+int main(int argc, char **argv)
+{
+	if (argc != 2)
+	{
 		fprintf(stderr, "expected argc 2, actual %d\n", argc);
 		return 1;
 	}
