@@ -228,7 +228,7 @@ static void emit_data(Obj *prog) {
 
 static void emit_text(Obj *prog) {
 	for (Obj *fn = prog; fn; fn = fn->next) {
-		if (fn -> is_function == false)
+		if (fn -> is_function == false || fn -> is_definition == false)
 			continue;
 		printf("	.global %s\n", fn->name);
 		printf("	.text\n");

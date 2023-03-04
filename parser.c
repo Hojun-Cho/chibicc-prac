@@ -630,14 +630,20 @@ static void create_func_params(Type *param) {
 }
 
 static Token *function(Token *tok, Type *basety) {
-	enter_scope();
-
-	locals = NULL;
 	Type *ty = declarator(&tok, tok, basety);
 	Obj *fn = new_gvar(get_ident(ty -> decl), ty);
-	create_func_params(ty->params);
-	fn -> params  = locals;
 	fn -> is_function = true;
+
+	if (consume_if_same(&tok, tok, ";")) {
+		fn -> is_definition = false;
+		return tok;
+	}
+
+	locals = NULL;
+	enter_scope();
+	fn -> is_definition = true;
+	create_func_params(ty->params);	
+	fn -> params  = locals;
 	tok = skip(tok, "{");
 	fn -> body = compound_stmt(&tok, tok);
 	fn -> locals = locals;

@@ -185,5 +185,7 @@ assert 4 'int main(){ char x[3]; char (*y)[3]=x; y[0][0]=4; return y[0][0]; }'
 assert 2 'int main() {short int x; return sizeof(x);}'
 assert 8 'int main() {long int x; return sizeof(x);}'
 assert 8 'int main() {int long x; return sizeof(x);}'
+
+assert 10 'int test(); int main(){return test();} int test(){return 10;}'
 echo OK
 

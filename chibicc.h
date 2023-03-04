@@ -93,6 +93,7 @@ struct Obj {
 
 	int offset; // Local var offset
 	bool is_function; // func or var  
+	bool is_definition;
 	char *init_data; // only for global var
 
 	// Function;
