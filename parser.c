@@ -9,7 +9,6 @@ static Obj *new_lvar(char *name, Type *ty) {
 	var -> next = locals;
 	locals = var;
 	return var;
-
 }
 
 static Obj *new_gvar(char *name, Type *ty) {
@@ -199,7 +198,7 @@ static Type *declspec(Token **rest, Token *tok) {
 			counter += INT;
 		else if (equal(tok, "void"))
 			counter += VOID;
-		else 
+		else
 			error_tok(tok, "unknown type name");
 
 		switch (counter) {
@@ -221,7 +220,7 @@ static Type *declspec(Token **rest, Token *tok) {
 				ty = ty_long;
 				break;
 			default:
-				error_tok(tok, "invalid type");	
+				error_tok(tok, "invalid type");
 		}
 		tok = tok->next;
 	}
@@ -556,9 +555,17 @@ static Node *postfix(Token **rest, Token *tok) {
 
 // funcall = ident "(" (assign ("," assign)*)? ")"
 static Node *funcall(Token **rest, Token *tok) {
+	Obj * var = find_var(tok);
+	if (var == NULL)
+		error_tok(tok, "undefined function");
+	if (var -> ty -> kind != TY_FUNC)
+		error_tok(tok, "not a function");
+
 	Node *node = new_node(ND_FUNCALL, tok);
 	node -> funcname = strndup(tok->loc, tok->len);
 	tok = tok -> next -> next;
+
+	Type *ty = var -> ty -> return_ty;
 	Node head = {};
 	Node *cur = &head;
 
@@ -566,9 +573,11 @@ static Node *funcall(Token **rest, Token *tok) {
 		if (cur != &head)
 			tok = skip(tok, ",");
 		cur = cur -> next = assign(&tok, tok);
+		add_type(cur);
 	}
 	*rest = skip(tok, ")");
 	node->args = head.next;
+	node -> ty = ty;
 	return node;
 }
 
@@ -629,26 +638,38 @@ static void create_func_params(Type *param) {
 	}
 }
 
-static Token *function(Token *tok, Type *basety) {
-	Type *ty = declarator(&tok, tok, basety);
-	Obj *fn = new_gvar(get_ident(ty -> decl), ty);
-	fn -> is_function = true;
-
-	if (consume_if_same(&tok, tok, ";")) {
-		fn -> is_definition = false;
-		return tok;
-	}
-
+static Token *func_decl(Token *tok, Type *ty, Obj *fn) {
 	locals = NULL;
 	enter_scope();
-	fn -> is_definition = true;
-	create_func_params(ty->params);	
+
+	create_func_params(ty->params);
 	fn -> params  = locals;
+	fn -> is_definition = true;
 	tok = skip(tok, "{");
 	fn -> body = compound_stmt(&tok, tok);
 	fn -> locals = locals;
 	leave_scope();
 	return tok;
+}
+
+static Token *function(Token *tok, Type *basety) {
+	Token *start = tok;
+	Obj *var = find_var(tok);
+	Type *ty = declarator(&tok, tok, basety);
+
+	if (var == NULL)
+	{
+		Obj *fn = new_gvar(get_ident(ty -> decl), ty);
+		fn -> is_function = true;
+		if (consume_if_same(&tok, tok, ";")) {
+			fn -> is_definition = false;
+			return tok;
+		}
+		return func_decl(tok, ty, fn);
+	}
+	if (var -> is_definition == true)
+		error_tok(start, "implicit declaration of a function");
+	return func_decl(tok, ty, var);
 }
 
 static Token *global_variable(Token *tok, Type *basety) {
