@@ -2,12 +2,12 @@ CFLAGS=-std=c11 -g -fno-common
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 
-chibicc: $(OBJS)
+com: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-test: chibicc
+test: com 
 	./test.sh
 
 clean:
-	rm -f chibicc *.o *~ tmp*
+	rm -f com *.o *~ tmp*
 
