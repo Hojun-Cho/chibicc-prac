@@ -7,13 +7,13 @@
 
 #define ASSERT_EQUAL(a, b)	\
 		if (a != b) {		\
-			printf("%s: %s : %S : Assert Fail\n", __FILE__, __func__, __LINE__);\
+			printf("%s: %s : %d : Assert Fail\n", __FILE__, __func__, __LINE__);\
 			exit(1);		\
 		}					
 
 #define ASSERT_TRUE(a)	\
 		if (a == 0) {		\
-			printf("%s: %s : %S : Assert Fail\n", __FILE__, __func__, __LINE__);\
+			printf("%s: %s : %d : Assert Fail\n", __FILE__, __func__, __LINE__);\
 			exit(1);		\
 		}					
 		
@@ -35,16 +35,17 @@ Token	*tokenize(char *p)
 	while (*p) {
 		if (isspace(*p)) {
 			p++;
-			continue ;
+			continue;
 		}
-		if (*p == '+' || *p == '-') {
-			cur = new_token(TK_RESERVED, cur, p++);
-			continue ;
-		}
-		if (isdigit(*p)) {
-			cur = new_token(TK_NUM, cur, p);
+		if (((*p == '+' || *p == '-') && isdigit(p[1]))
+			|| isdigit(p[0])) {
+		    cur = new_token(TK_NUM, cur, p);
 			cur->val = strtol(p, &p, 10);
 			continue ;
+		}
+		if ((*p == '+' || *p == '-')) {
+			cur = new_token(TK_RESERVED, cur, p++);
+			continue;
 		}
 		error("invalid token");
 	}
@@ -69,11 +70,43 @@ int main()
 		t = tokenize("123");
 		ASSERT_EQUAL(t->kind, TK_NUM);
 		ASSERT_EQUAL(t->val, 123);
-		ASSERT_TRUE(strncmp(t->str, "123", 3) == 0);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_EOF);
+		ASSERT_EQUAL(t->str[0], '\0');
+	}
+	
+	{
+		t = tokenize("+123");
+		ASSERT_EQUAL(t->kind, TK_NUM);
+		ASSERT_EQUAL(t->val, 123);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_EOF);
+		ASSERT_EQUAL(t->str[0], '\0');
+	}
+	
+	{
+		t = tokenize("-123");
+		ASSERT_EQUAL(t->kind, TK_NUM);
+		ASSERT_EQUAL(t->val, -123);
 		t = t->next;
 		ASSERT_EQUAL(t->kind, TK_EOF);
 		ASSERT_EQUAL(t->str[0], '\0');
 	}
 
+
+	{
+		t = tokenize("1 + 3");
+		ASSERT_EQUAL(t->kind, TK_NUM);
+		ASSERT_EQUAL(t->val, 1);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_RESERVED);
+		ASSERT_TRUE(strncmp(t->str, "+", 1) == 0);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_NUM);
+		ASSERT_EQUAL(t->val, 3);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_EOF);
+		ASSERT_EQUAL(t->str[0], '\0');
+	}
 
 }

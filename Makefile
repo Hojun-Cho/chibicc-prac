@@ -4,5 +4,5 @@ INC := ./include
 src := ./src/*.c
 
 all:
-	cc ${src} -I ${INC}
+	cc -g3 ${src} -I ${INC} 
 
