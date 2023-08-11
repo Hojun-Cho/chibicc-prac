@@ -1,9 +1,22 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include "token.h"
 #include "error.h"
 
+#define ASSERT_EQUAL(a, b)	\
+		if (a != b) {		\
+			printf("%s: %s : %S : Assert Fail\n", __FILE__, __func__, __LINE__);\
+			exit(1);		\
+		}					
+
+#define ASSERT_TRUE(a)	\
+		if (a == 0) {		\
+			printf("%s: %s : %S : Assert Fail\n", __FILE__, __func__, __LINE__);\
+			exit(1);		\
+		}					
+		
 Token *new_token(TokenKind kind, Token *cur, char *str)
 {
 	Token *tok = calloc(1, sizeof(Token));
@@ -35,6 +48,32 @@ Token	*tokenize(char *p)
 		}
 		error("invalid token");
 	}
-	new_token(TK_EOF, cur, p);
+	cur = new_token(TK_EOF, cur, p);
 	return head.next;
+}
+
+int main()
+{
+	Token *t;
+
+	{
+		t = tokenize("+");
+		ASSERT_EQUAL(t->kind, TK_RESERVED);
+		ASSERT_EQUAL(t->str[0], '+');
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_EOF);
+		ASSERT_EQUAL(t->str[0], '\0');
+	}
+
+	{
+		t = tokenize("123");
+		ASSERT_EQUAL(t->kind, TK_NUM);
+		ASSERT_EQUAL(t->val, 123);
+		ASSERT_TRUE(strncmp(t->str, "123", 3) == 0);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_EOF);
+		ASSERT_EQUAL(t->str[0], '\0');
+	}
+
+
 }
