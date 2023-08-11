@@ -108,5 +108,20 @@ int main()
 		ASSERT_EQUAL(t->kind, TK_EOF);
 		ASSERT_EQUAL(t->str[0], '\0');
 	}
+	
+	{
+		t = tokenize("+1 + -3");
+		ASSERT_EQUAL(t->kind, TK_NUM);
+		ASSERT_EQUAL(t->val, 1);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_RESERVED);
+		ASSERT_TRUE(strncmp(t->str, "+", 1) == 0);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_NUM);
+		ASSERT_EQUAL(t->val, -3);
+		t = t->next;
+		ASSERT_EQUAL(t->kind, TK_EOF);
+		ASSERT_EQUAL(t->str[0], '\0');
+	}
 
 }
